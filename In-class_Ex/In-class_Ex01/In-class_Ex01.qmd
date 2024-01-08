@@ -1,0 +1,21 @@
+---
+title: "In-class Exercise 1"
+execute: 
+  warning: false
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+---
+
+```{r}
+```
+
+```{r}
+```
+
+```{r}
+```
+
+```{r}
+```
+
+```{r}
+```

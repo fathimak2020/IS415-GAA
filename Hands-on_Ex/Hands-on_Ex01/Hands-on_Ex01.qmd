@@ -1,0 +1,264 @@
+---
+title: "Hands-on Exercise 1: Geospatial Data Wrangling with R"
+execute: 
+  warning: false
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+---
+
+# 1.1 Getting Started
+
+In this exercise, I will:
+
+-   install and load of basic R packages
+
+-   handle geospatial files
+
+-   plot geospatial data
+
+## 1.1.1 Datasets
+
+-   [Master Plan 2014 Subzone Boundary (Web)](https://beta.data.gov.sg/datasets/d_5cb80a95445f236737f6bc2bfe5f159d/view)
+
+-   [Pre-Schools Location](https://beta.data.gov.sg/collections/2064/view)
+
+-   [Cycling Path](https://datamall.lta.gov.sg/content/datamall/en/search_datasets.html?searchText=Cycling%20Path)
+
+-   [Singapore Airbnb Listing CSV](http://insideairbnb.com/get-the-data/)
+
+## 1.1.2 Installing and loading R packages
+
+In this exercise, `tidyverse` and `sf` packages will be used.
+
+```{r}
+pacman::p_load(tidyverse, sf)
+```
+
+# 1.2 Importing Geospatial Data
+
+`st_read()` from`sf` package, can be used for shapefiles to be imported into R as a *polygon feature data frame*.
+
+## 1.2.1 Master Plan 2014 Subzone Boundary
+
+```{r}
+mpsz = st_read(dsn = "data/geospatial", 
+                  layer = "MP14_SUBZONE_WEB_PL")
+```
+
+## 1.2.2 Cycling Path
+
+```{r}
+cyclingpath = st_read(dsn="data/geospatial",
+                       layer = "CyclingPathGazette")
+```
+
+## 1.2.3 Pre-Schools Location
+
+```{r}
+preschool = st_read(dsn = "data/geospatial/PreSchoolsLocation.kml")
+```
+
+## 1.3 Checking the Content of A Simple Feature Data Frame
+
+## **1.3.1 Retrieve Geometries**
+
+`st_geometry(mpsz)` displays basic information of the geometries.
+
+```{r}
+st_geometry(mpsz)
+```
+
+## 1.3.2 View Attributes in simple feature DataFrame
+
+```{r}
+glimpse(mpsz)
+```
+
+## **1.3.3 View Complete Information of Feature Object**
+
+```{r}
+head(mpsz, n=5) # top 5
+```
+
+# 1.4 Plotting Geospatial Data
+
+`plot()` would visualise all attributes.
+
+```{r}
+plot(mpsz)
+```
+
+## 1.4.1 Geometry Plot
+
+```{r}
+plot(st_geometry(mpsz))
+```
+
+## 1.4.2 Attribute Plot
+
+```{r}
+plot(mpsz["PLN_AREA_N"])
+```
+
+# 1.5 Working with Map Projection
+
+For geoprocessing with multiple geospatial datasets, ensure they share a common coordinate system. Transforming a DataFrame from one coordinate system to another is known as projection transformation.
+
+## 1.5.1 Assigning EPSG code
+
+In MPSZ, the EPSG code is 9001.
+
+```{r}
+st_crs(mpsz)
+```
+
+`st_set_crs()` can be used for EPSG code assignment.
+
+```{r}
+mpsz3414 <- st_set_crs(mpsz, 3414)
+```
+
+## 1.5.2 Transforming Projection
+
+```{r}
+preschool3414 <- st_transform(preschool, 
+                              crs = 3414)
+```
+
+# 1.6 Importing and Converting Aspatial Data
+
+## 1.6.1 Importing Aspatial Data
+
+```{r}
+listings <- read_csv("data/aspatial/listings.csv")
+```
+
+```{r}
+list(listings) 
+```
+
+## 1.6.2 Converting from Aspatial DataFrame to Simple Feature DataFrame
+
+Parameters for st_as_sf():
+
+-   coords: Column names for x and y coordinates
+
+-   crs: Coordinate system in EPSG format
+
+-   %\>% Chains st_transform() to convert the DataFrame into the svy21 projected coordinate system
+
+```{r}
+listings_sf <- st_as_sf(listings, 
+                       coords = c("longitude", "latitude"),
+                       crs=4326) %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+glimpse(listings_sf)
+```
+
+# 1.7 Geoprocessing
+
+## 1.7.1 Buffering
+
+**Scenario**
+
+The authority intends to enhance the existing cycling path. To achieve this, they must obtain 5 meters of reserved land on both sides of the current cycling path. Your responsibility is to ascertain the extent of the land that needs to be acquired and calculate its total area.
+
+`st_buffer()` can be used to compute buffers.
+
+```{r}
+buffer_cycling <- st_buffer(cyclingpath, 
+                            dist=5, nQuadSegs = 30)
+```
+
+`st_area()` will compute the area of the buffers and generate an AREA column for buffer_cycling
+
+```{r}
+buffer_cycling$AREA <- st_area(buffer_cycling)
+```
+
+To derive total land, `sum()` is used
+
+```{r}
+sum(buffer_cycling$AREA)
+```
+
+## 1.7.2 Point in Polygon Count
+
+**Scenario**
+
+A pre-school service group want to find out the numbers of pre-schools in each Planning Subzone.
+
+Preschools within each planning subzone are identified using `st_intersects()`. The number of preschools in each subzone is then calculated using `Length().` 
+
+```{r}
+mpsz3414$`PreSch Count`<- lengths(st_intersects(mpsz3414, preschool3414))
+```
+
+```{r}
+summary(mpsz3414$`PreSch Count`)
+```
+
+Using `top_n()`, the planning subzone with the highest number of pre-schools is found.
+
+```{r}
+top_n(mpsz3414, 1, `PreSch Count`)
+```
+
+## 1.7.3 Density of Pre-schools by Planning Subzones
+
+Use st_area() to derive the area of each planning subzone.
+
+```{r}
+mpsz3414$Area <- mpsz3414 %>%
+  st_area()
+
+```
+
+`mutate()` is then applied to compute density and create “PreSch Density” column.
+
+```{r}
+mpsz3414 <- mpsz3414 %>%
+  mutate(`PreSch Density` = `PreSch Count`/Area * 1000000)
+
+```
+
+# 1.8 EDA
+
+## 1.8.1 Histogram
+
+Plotting a histogram using  hist()  from base R
+
+```{r}
+hist(mpsz3414$`PreSch Density`)
+```
+
+## 1.8.2 ggplot2 Library
+
+```{r}
+ggplot(data = mpsz3414,
+       aes(x = as.numeric(`PreSch Density`))) +
+    geom_histogram(bins = 20,
+                   color = "darkgrey",
+                   fill = "lavender") +
+    labs(title = "Are pre-schools evenly distributed in Singapore?",
+         subtitle = "There are many planning sub-zones with a single pre-school, on the other hand, \nthere are two planning sub-zones with at least 20 pre-schools",
+         x = "Pre-school density (per km sq)",
+         y = "Frequency")
+```
+
+## 1.8.3 Scatterplot
+
+```{r}
+ggplot(data = mpsz3414,
+       aes(y = `PreSch Count`,
+            x = as.numeric(`PreSch Density`))) +
+    geom_point(color = "darkorange",
+               fill = "mintcream") +
+    xlim(0, 40) +
+    ylim(0, 40) +
+    labs(title = "Are pre-schools evenly distributed in Singapore?",
+         x = "Pre-school density (per km sq)",
+         y = "Pre-school count")
+```
