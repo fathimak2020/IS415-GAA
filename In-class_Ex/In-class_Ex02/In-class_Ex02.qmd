@@ -1,45 +1,112 @@
 ---
-title: "In-class Exercise 2"
+title: "In-class Exercise 2: R for Geospatial Data Science"
+format: 
+  html:
+    code-fold: true
+    code-summary: "Show the code"
+    #toc: false
 execute: 
+  eval: true
+  echo: true
   warning: false
-date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+editor: visual
 ---
 
-## Getting Started
+# Getting Started
 
-## Load R packages 
+## Load R packages
 
-Load the following R packages:
+In this in-class exercise, the following R packages will be used: 
 
-- arrow
-- lubridate
-- tidyverse
-- tmap
-- sf 
+-   `arrow` to read Parquet files
+-   `lubridate` for working with date-time data 
+-   tidyverse
+-   `tmap` for interactive maps 
+-   sf
 
 ```{r}
 pacman::p_load(arrow, lubridate, tidyverse, tmap, sf)
 ```
 
-## Importing Grab-Posisi Dataset
-```{r}
+# Importing Grab-Posisi Dataset
 
-```
-
-## Converting into sg tibble data.frame
-```{r}
-```
-
-
-## Visualising as point symbol map
-```{r}
-```
-
-
-## Importing Masterplan 2019 Planning Subzone Boundary
-```{r}
-
-```
+Using `read_parquet()` to import Grab-Posisi dataset
 
 ```{r}
+#| eval: false
+df <- read_parquet("data/GrabPosisi/part-00000.parquet")
+#../../data..
 ```
+
+The field 'pingtimestamp' is not in proper date-time format. The following code chunk converts the data type of pingtimestamp from character to date-time format. Instead of using the mutuate function, we overwrite the df.
+
+```{r}
+#| eval: false
+df$pingtimestamp <- as_datetime(df$pingtimestamp)
+```
+
+
+## Extracting trips starting locations
+
+- extract trips origin locations
+- derive new columns : weekday, starting hour and day of month
+
+```{r}
+#| eval: false
+origin_df <- df %>%
+  group_by(trj_id) %>%
+  arrange (pingtimestamp) %>%
+  filter(row_number()==1) %>% #first row gives origin location 
+  mutate(weekday = wday(pingtimestamp, #define workday
+                        label = TRUE,
+                        abbr = TRUE), #Monday = MON 
+        start_hr = factor(hour(pingtimestamp)),
+        day = factor(mday(pingtimestamp))) #to change to ordinal scale
+```
+
+## Extracting trips ending locations
+
+- extract trips destination locations
+- derive new columns: weekday, ending hour and day of month 
+
+```{r}
+#| eval: false
+dest_df <- df %>%
+  group_by(trj_id) %>%
+  arrange(desc(pingtimestamp)) %>% #function from dplyr
+  filter(row_number()==1) %>% #first row after arranging in desc order gives dest  
+  mutate(weekday = wday(pingtimestamp, #define workday
+                        label = TRUE,
+                        abbr = TRUE), #Monday = MON 
+        end_hr = factor(hour(pingtimestamp)),
+        day = factor(mday(pingtimestamp))) #to change to ordinal scale
+```
+
+
+```{r}
+#| echo: false
+#| eval: false
+
+#all the object classes will be saved as native
+write_rds(origin_df,"data/rds/origin_df.rds") 
+write_rds(dest_df,"data/rds/dest_df.rds")
+```
+
+#Import Data for future use 
+
+```{r}
+#origin_df <-read_rds(data/rds/origin_df.rds)
+#dest_df <-read_rds(data/rds/dest_df.rds)
+```
+
+## Visualising frequency distribution
+
+# Converting into `sf` tibble data.frame
+
+# Visualising as point symbol map
+
+# Importing Masterplan 2019 Planning Subzone Boundary
+
+
+
+

@@ -6,9 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="dcterms.date" content="2024-01-15">
 
-<title>IS415 - GAA - In-class Exercise 2</title>
+<title>IS415 - GAA - In-class Exercise 2: R for Geospatial Data Science</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -199,9 +198,17 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#getting-started" id="toc-getting-started" class="nav-link active" data-scroll-target="#getting-started">Getting Started</a></li>
+  <li><a href="#getting-started" id="toc-getting-started" class="nav-link active" data-scroll-target="#getting-started">Getting Started</a>
+  <ul class="collapse">
   <li><a href="#load-r-packages" id="toc-load-r-packages" class="nav-link" data-scroll-target="#load-r-packages">Load R packages</a></li>
-  <li><a href="#converting-into-sg-tibble-data.frame" id="toc-converting-into-sg-tibble-data.frame" class="nav-link" data-scroll-target="#converting-into-sg-tibble-data.frame">Converting into sg tibble data.frame</a></li>
+  </ul></li>
+  <li><a href="#importing-grab-posisi-dataset" id="toc-importing-grab-posisi-dataset" class="nav-link" data-scroll-target="#importing-grab-posisi-dataset">Importing Grab-Posisi Dataset</a>
+  <ul class="collapse">
+  <li><a href="#extracting-trips-starting-locations" id="toc-extracting-trips-starting-locations" class="nav-link" data-scroll-target="#extracting-trips-starting-locations">Extracting trips starting locations</a></li>
+  <li><a href="#extracting-trips-ending-locations" id="toc-extracting-trips-ending-locations" class="nav-link" data-scroll-target="#extracting-trips-ending-locations">Extracting trips ending locations</a></li>
+  <li><a href="#visualising-frequency-distribution" id="toc-visualising-frequency-distribution" class="nav-link" data-scroll-target="#visualising-frequency-distribution">Visualising frequency distribution</a></li>
+  </ul></li>
+  <li><a href="#converting-into-sf-tibble-data.frame" id="toc-converting-into-sf-tibble-data.frame" class="nav-link" data-scroll-target="#converting-into-sf-tibble-data.frame">Converting into <code>sf</code> tibble data.frame</a></li>
   <li><a href="#visualising-as-point-symbol-map" id="toc-visualising-as-point-symbol-map" class="nav-link" data-scroll-target="#visualising-as-point-symbol-map">Visualising as point symbol map</a></li>
   <li><a href="#importing-masterplan-2019-planning-subzone-boundary" id="toc-importing-masterplan-2019-planning-subzone-boundary" class="nav-link" data-scroll-target="#importing-masterplan-2019-planning-subzone-boundary">Importing Masterplan 2019 Planning Subzone Boundary</a></li>
   </ul>
@@ -212,7 +219,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">In-class Exercise 2</h1>
+<h1 class="title">In-class Exercise 2: R for Geospatial Data Science</h1>
 </div>
 
 
@@ -220,12 +227,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <div class="quarto-title-meta">
 
     
-    <div>
-    <div class="quarto-title-meta-heading">Published</div>
-    <div class="quarto-title-meta-contents">
-      <p class="date">January 15, 2024</p>
-    </div>
-  </div>
   
     
   </div>
@@ -233,31 +234,105 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<section id="getting-started" class="level2">
-<h2 class="anchored" data-anchor-id="getting-started">Getting Started</h2>
-</section>
+<section id="getting-started" class="level1">
+<h1>Getting Started</h1>
 <section id="load-r-packages" class="level2">
 <h2 class="anchored" data-anchor-id="load-r-packages">Load R packages</h2>
-<p>Load the following R packages:</p>
+<p>In this in-class exercise, the following R packages will be used:</p>
 <ul>
-<li>arrow</li>
-<li>lubridate</li>
+<li><code>arrow</code> to read Parquet files</li>
+<li><code>lubridate</code> for working with date-time data</li>
 <li>tidyverse</li>
-<li>tmap</li>
+<li><code>tmap</code> for interactive maps</li>
 <li>sf</li>
 </ul>
 <div class="cell">
+<details>
+<summary>Code</summary>
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(arrow, lubridate, tidyverse, tmap, sf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
 </div>
 </section>
-<section id="converting-into-sg-tibble-data.frame" class="level2">
-<h2 class="anchored" data-anchor-id="converting-into-sg-tibble-data.frame">Converting into sg tibble data.frame</h2>
 </section>
-<section id="visualising-as-point-symbol-map" class="level2">
-<h2 class="anchored" data-anchor-id="visualising-as-point-symbol-map">Visualising as point symbol map</h2>
+<section id="importing-grab-posisi-dataset" class="level1">
+<h1>Importing Grab-Posisi Dataset</h1>
+<p>Using <code>read_parquet()</code> to import Grab-Posisi dataset</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">read_parquet</span>(<span class="st">"data/GrabPosisi/part-00000.parquet"</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="co">#../../data..</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>The field ‘pingtimestamp’ is not in proper date-time format. The following code chunk converts the data type of pingtimestamp from character to date-time format. Instead of using the mutuate function, we overwrite the df.</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>df<span class="sc">$</span>pingtimestamp <span class="ot">&lt;-</span> <span class="fu">as_datetime</span>(df<span class="sc">$</span>pingtimestamp)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<section id="extracting-trips-starting-locations" class="level2">
+<h2 class="anchored" data-anchor-id="extracting-trips-starting-locations">Extracting trips starting locations</h2>
+<ul>
+<li>extract trips origin locations</li>
+<li>derive new columns : weekday, starting hour and day of month</li>
+</ul>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>origin_df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(trj_id) <span class="sc">%&gt;%</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span> (pingtimestamp) <span class="sc">%&gt;%</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">row_number</span>()<span class="sc">==</span><span class="dv">1</span>) <span class="sc">%&gt;%</span> <span class="co">#first row gives origin location </span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">weekday =</span> <span class="fu">wday</span>(pingtimestamp, <span class="co">#define workday</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">label =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">abbr =</span> <span class="cn">TRUE</span>), <span class="co">#Monday = MON </span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">start_hr =</span> <span class="fu">factor</span>(<span class="fu">hour</span>(pingtimestamp)),</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">day =</span> <span class="fu">factor</span>(<span class="fu">mday</span>(pingtimestamp))) <span class="co">#to change to ordinal scale</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
 </section>
-<section id="importing-masterplan-2019-planning-subzone-boundary" class="level2">
-<h2 class="anchored" data-anchor-id="importing-masterplan-2019-planning-subzone-boundary">Importing Masterplan 2019 Planning Subzone Boundary</h2>
+<section id="extracting-trips-ending-locations" class="level2">
+<h2 class="anchored" data-anchor-id="extracting-trips-ending-locations">Extracting trips ending locations</h2>
+<ul>
+<li>extract trips destination locations</li>
+<li>derive new columns: weekday, ending hour and day of month</li>
+</ul>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>dest_df <span class="ot">&lt;-</span> df <span class="sc">%&gt;%</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(trj_id) <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(pingtimestamp)) <span class="sc">%&gt;%</span> <span class="co">#function from dplyr</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">row_number</span>()<span class="sc">==</span><span class="dv">1</span>) <span class="sc">%&gt;%</span> <span class="co">#first row after arranging in desc order gives dest  </span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">weekday =</span> <span class="fu">wday</span>(pingtimestamp, <span class="co">#define workday</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>                        <span class="at">label =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>                        <span class="at">abbr =</span> <span class="cn">TRUE</span>), <span class="co">#Monday = MON </span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>        <span class="at">end_hr =</span> <span class="fu">factor</span>(<span class="fu">hour</span>(pingtimestamp)),</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>        <span class="at">day =</span> <span class="fu">factor</span>(<span class="fu">mday</span>(pingtimestamp))) <span class="co">#to change to ordinal scale</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+<p>#Import Data for future use</p>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co">#origin_df &lt;-read_rds(data/rds/origin_df.rds)</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co">#dest_df &lt;-read_rds(data/rds/dest_df.rds)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+</div>
+</section>
+<section id="visualising-frequency-distribution" class="level2">
+<h2 class="anchored" data-anchor-id="visualising-frequency-distribution">Visualising frequency distribution</h2>
+</section>
+</section>
+<section id="converting-into-sf-tibble-data.frame" class="level1">
+<h1>Converting into <code>sf</code> tibble data.frame</h1>
+</section>
+<section id="visualising-as-point-symbol-map" class="level1">
+<h1>Visualising as point symbol map</h1>
+</section>
+<section id="importing-masterplan-2019-planning-subzone-boundary" class="level1">
+<h1>Importing Masterplan 2019 Planning Subzone Boundary</h1>
 
 
 </section>

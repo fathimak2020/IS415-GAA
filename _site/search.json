@@ -2,9 +2,9 @@
   {
     "objectID": "In-class_Ex/In-class_Ex02/In-class_Ex02.html",
     "href": "In-class_Ex/In-class_Ex02/In-class_Ex02.html",
-    "title": "In-class Exercise 2",
+    "title": "In-class Exercise 2: R for Geospatial Data Science",
     "section": "",
-    "text": "pacman::p_load(arrow, lubridate, tidyverse, tmap, sf)\n\n##Load R packages"
+    "text": "In this in-class exercise, the following R packages will be used:\n\narrow to read Parquet files\nlubridate for working with date-time data\ntidyverse\ntmap for interactive maps\nsf\n\n\n\nCode\npacman::p_load(arrow, lubridate, tidyverse, tmap, sf)"
   },
   {
     "objectID": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#getting-started",
@@ -30,9 +30,9 @@
   {
     "objectID": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#load-r-packages",
     "href": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#load-r-packages",
-    "title": "In-class Exercise 2",
-    "section": "Load R packages",
-    "text": "Load R packages\nLoad the following R packages:\n\narrow\nlubridate\ntidyverse\ntmap\nsf\n\n\npacman::p_load(arrow, lubridate, tidyverse, tmap, sf)"
+    "title": "In-class Exercise 2: R for Geospatial Data Science",
+    "section": "",
+    "text": "In this in-class exercise, the following R packages will be used:\n\narrow to read Parquet files\nlubridate for working with date-time data\ntidyverse\ntmap for interactive maps\nsf\n\n\n\nCode\npacman::p_load(arrow, lubridate, tidyverse, tmap, sf)"
   },
   {
     "objectID": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#importing-masterplan-2019-planning-subzone-boundary",
@@ -40,5 +40,40 @@
     "title": "In-class Exercise 2",
     "section": "Importing Masterplan 2019 Planning Subzone Boundary",
     "text": "Importing Masterplan 2019 Planning Subzone Boundary"
+  },
+  {
+    "objectID": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#extracting-trips-starting-with",
+    "href": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#extracting-trips-starting-with",
+    "title": "In-class Exercise 2: R for Geospatial Data Science",
+    "section": "Extracting trips starting with",
+    "text": "Extracting trips starting with"
+  },
+  {
+    "objectID": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#extracting-trips-ending-with",
+    "href": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#extracting-trips-ending-with",
+    "title": "In-class Exercise 2: R for Geospatial Data Science",
+    "section": "Extracting trips ending with",
+    "text": "Extracting trips ending with"
+  },
+  {
+    "objectID": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#extracting-trips-starting-locations",
+    "href": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#extracting-trips-starting-locations",
+    "title": "In-class Exercise 2: R for Geospatial Data Science",
+    "section": "Extracting trips starting locations",
+    "text": "Extracting trips starting locations\n\nextract trips origin locations\nderive new columns : weekday, starting hour and day of month\n\n\n\nCode\norigin_df &lt;- df %&gt;%\n  group_by(trj_id) %&gt;%\n  arrange (pingtimestamp) %&gt;%\n  filter(row_number()==1) %&gt;% #first row gives origin location \n  mutate(weekday = wday(pingtimestamp, #define workday\n                        label = TRUE,\n                        abbr = TRUE), #Monday = MON \n        start_hr = factor(hour(pingtimestamp)),\n        day = factor(mday(pingtimestamp))) #to change to ordinal scale"
+  },
+  {
+    "objectID": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#extracting-trips-ending-locations",
+    "href": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#extracting-trips-ending-locations",
+    "title": "In-class Exercise 2: R for Geospatial Data Science",
+    "section": "Extracting trips ending locations",
+    "text": "Extracting trips ending locations\n\nextract trips destination locations\nderive new columns: weekday, ending hour and day of month\n\n\n\nCode\ndest_df &lt;- df %&gt;%\n  group_by(trj_id) %&gt;%\n  arrange(desc(pingtimestamp)) %&gt;% #function from dplyr\n  filter(row_number()==1) %&gt;% #first row after arranging in desc order gives dest  \n  mutate(weekday = wday(pingtimestamp, #define workday\n                        label = TRUE,\n                        abbr = TRUE), #Monday = MON \n        end_hr = factor(hour(pingtimestamp)),\n        day = factor(mday(pingtimestamp))) #to change to ordinal scale\n\n\n#Import Data for future use\n\n\nCode\n#origin_df &lt;-read_rds(data/rds/origin_df.rds)\n#dest_df &lt;-read_rds(data/rds/dest_df.rds)"
+  },
+  {
+    "objectID": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#visualising-frequency-distribution",
+    "href": "In-class_Ex/In-class_Ex02/In-class_Ex02.html#visualising-frequency-distribution",
+    "title": "In-class Exercise 2: R for Geospatial Data Science",
+    "section": "Visualising frequency distribution",
+    "text": "Visualising frequency distribution"
   }
 ]
