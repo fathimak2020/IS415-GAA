@@ -1,9 +1,5 @@
 ---
-title: "About"
+title: "About Me!"
 ---
 
-About this site
-
-```{r}
-1 + 1
-```
+Hello! I am Fathima, a Y4 Information Systems from Singapore Management University 😸
