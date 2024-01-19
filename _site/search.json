@@ -879,14 +879,14 @@
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#clark-and-evans-test-choa-chu-kang-planning-area",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.8.2 Clark and Evans Test: Choa Chu Kang planning area",
-    "text": "3.8.2 Clark and Evans Test: Choa Chu Kang planning area\nIn the code chunk below, clarkevans.test() of spatstat is used to performs Clark-Evans test of aggregation for childcare centre in Choa Chu Kang planning area.\n\nclarkevans.test(childcare_ck_ppp,\n                correction=\"none\",\n                clipregion=NULL,\n                alternative=c(\"two.sided\"),\n                nsim=999)\n\n\n    Clark-Evans test\n    No edge correction\n    Z-test\n\ndata:  childcare_ck_ppp\nR = 0.75409, p-value = 9.075e-06\nalternative hypothesis: two-sided"
+    "text": "3.8.2 Clark and Evans Test: Choa Chu Kang planning area\nIn the code chunk below, clarkevans.test() of spatstat is used to performs Clark-Evans test of aggregation for childcare centre in Choa Chu Kang planning area.\n\nclarkevans.test(childcare_ck_ppp,\n                correction=\"none\",\n                clipregion=NULL,\n                alternative=c(\"two.sided\"),\n                nsim=999)\n\n\n    Clark-Evans test\n    No edge correction\n    Z-test\n\ndata:  childcare_ck_ppp\nR = 0.74871, p-value = 5.754e-06\nalternative hypothesis: two-sided"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#clark-and-evans-test-tampines-planning-area",
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#clark-and-evans-test-tampines-planning-area",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.8.3 Clark and Evans Test: Tampines planning area",
-    "text": "3.8.3 Clark and Evans Test: Tampines planning area\nIn the code chunk below, the similar test is used to analyse the spatial point patterns of childcare centre in Tampines planning area.\n\nclarkevans.test(childcare_tm_ppp,\n                correction=\"none\",\n                clipregion=NULL,\n                alternative=c(\"two.sided\"),\n                nsim=999)\n\n\n    Clark-Evans test\n    No edge correction\n    Z-test\n\ndata:  childcare_tm_ppp\nR = 0.60251, p-value &lt; 2.2e-16\nalternative hypothesis: two-sided"
+    "text": "3.8.3 Clark and Evans Test: Tampines planning area\nIn the code chunk below, the similar test is used to analyse the spatial point patterns of childcare centre in Tampines planning area.\n\nclarkevans.test(childcare_tm_ppp,\n                correction=\"none\",\n                clipregion=NULL,\n                alternative=c(\"two.sided\"),\n                nsim=999)\n\n\n    Clark-Evans test\n    No edge correction\n    Z-test\n\ndata:  childcare_tm_ppp\nR = 0.60267, p-value &lt; 2.2e-16\nalternative hypothesis: two-sided"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#choa-chu-kang-planning-area",
@@ -900,14 +900,14 @@
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#computing-g-function-estimation",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.10.1.1 Computing G-function Estimation",
-    "text": "3.10.1.1 Computing G-function Estimation\nThe code chunk below is used to compute G-function using Gest() of spatat package.\n{r} G_CK = Gest(childcare_ck_ppp, correction = \"border\") plot(G_CK, xlim=c(0,500))}"
+    "text": "3.10.1.1 Computing G-function Estimation\nThe code chunk below is used to compute G-function using Gest() of spatat package.\n\nG_CK = Gest(childcare_ck_ppp, correction = \"border\") \n\n\nplot(G_CK, xlim=c(0,500))"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test",
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.10.1.2 Performing Complete Spatial Randomness Test",
-    "text": "3.10.1.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Choa Chu Kang are randomly distributed.\nH1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.\nThe null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.\n\nMonte Carlo test with G-function\n{r} G_CK.csr &lt;- envelope(childcare_ck_ppp, Gest, nsim = 999)}\n{r} plot(G_CK.csr)}"
+    "text": "3.10.1.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Choa Chu Kang are randomly distributed.\nH1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.\nThe null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.\n\nMonte Carlo test with G-function\n\nG_CK.csr &lt;- envelope(childcare_ck_ppp, Gest, nsim = 999)\n\nGenerating 999 simulations of CSR  ...\n1, 2, 3, ......10.........20.........30.........40.........50.........60..\n.......70.........80.........90.........100.........110.........120.........130\n.........140.........150.........160.........170.........180.........190........\n.200.........210.........220.........230.........240.........250.........260......\n...270.........280.........290.........300.........310.........320.........330....\n.....340.........350.........360.........370.........380.........390.........400..\n.......410.........420.........430.........440.........450.........460.........470\n.........480.........490.........500.........510.........520.........530........\n.540.........550.........560.........570.........580.........590.........600......\n...610.........620.........630.........640.........650.........660.........670....\n.....680.........690.........700.........710.........720.........730.........740..\n.......750.........760.........770.........780.........790.........800.........810\n.........820.........830.........840.........850.........860.........870........\n.880.........890.........900.........910.........920.........930.........940......\n...950.........960.........970.........980.........990........\n999.\n\nDone.\n\n\n\nplot(G_CK.csr)"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#tampines-planning-area",
@@ -921,14 +921,14 @@
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#computing-g-function-estimation-1",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.10.2.1 Computing G-function Estimation",
-    "text": "3.10.2.1 Computing G-function Estimation\n{r} G_tm = Gest(childcare_tm_ppp, correction = \"best\") plot(G_tm)}"
+    "text": "3.10.2.1 Computing G-function Estimation\n\nG_tm = Gest(childcare_tm_ppp, correction = \"best\") \n\n\nplot(G_tm)"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-1",
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-1",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.10.2.2 Performing Complete Spatial Randomness Test",
-    "text": "3.10.2.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Tampines are randomly distributed.\nH1= The distribution of childcare services at Tampines are not randomly distributed.\nThe null hypothesis will be rejected is p-value is smaller than alpha value of 0.001.\n\nThe code chunk below is used to perform the hypothesis testing.\n{r} G_tm.csr &lt;- envelope(childcare_tm_ppp, Gest, correction = \"all\", nsim = 999)}\n{r} plot(G_tm.csr)}"
+    "text": "3.10.2.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Tampines are randomly distributed.\nH1= The distribution of childcare services at Tampines are not randomly distributed.\nThe null hypothesis will be rejected is p-value is smaller than alpha value of 0.001.\n\nThe code chunk below is used to perform the hypothesis testing.\n\nG_tm.csr &lt;- envelope(childcare_tm_ppp, Gest, correction = \"all\", nsim = 999)\n\nGenerating 999 simulations of CSR  ...\n1, 2, 3, ......10.........20.........30.........40.........50.........60..\n.......70.........80.........90.........100.........110.........120.........130\n.........140.........150.........160.........170.........180.........190........\n.200.........210.........220.........230.........240.........250.........260......\n...270.........280.........290.........300.........310.........320.........330....\n.....340.........350.........360.........370.........380.........390.........400..\n.......410.........420.........430.........440.........450.........460.........470\n.........480.........490.........500.........510.........520.........530........\n.540.........550.........560.........570.........580.........590.........600......\n...610.........620.........630.........640.........650.........660.........670....\n.....680.........690.........700.........710.........720.........730.........740..\n.......750.........760.........770.........780.........790.........800.........810\n.........820.........830.........840.........850.........860.........870........\n.880.........890.........900.........910.........920.........930.........940......\n...950.........960.........970.........980.........990........\n999.\n\nDone.\n\n\n\nplot(G_tm.csr)"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#choa-chu-kang-planning-area-1",
@@ -942,14 +942,14 @@
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#computing-f-function-estimation",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.11.1.1 Computing F-function Estimation",
-    "text": "3.11.1.1 Computing F-function Estimation\nThe code chunk below is used to compute F-function using Fest() of spatat package.\n{r} F_CK = Fest(childcare_ck_ppp) plot(F_CK)}"
+    "text": "3.11.1.1 Computing F-function Estimation\nThe code chunk below is used to compute F-function using Fest() of spatat package.\n\nF_CK = Fest(childcare_ck_ppp)\n\n\n plot(F_CK)"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-2",
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-2",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.11.2 Performing Complete Spatial Randomness Test",
-    "text": "3.11.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Choa Chu Kang are randomly distributed.\nH1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.\nThe null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.\n\nMonte Carlo test with F-function\n{r} F_CK.csr &lt;- envelope(childcare_ck_ppp, Fest, nsim = 999)}\n{r} plot(F_CK.csr)}"
+    "text": "3.11.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Choa Chu Kang are randomly distributed.\nH1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.\nThe null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.\n\nMonte Carlo test with F-function\n\nF_CK.csr &lt;- envelope(childcare_ck_ppp, Fest, nsim = 999)\n\nGenerating 999 simulations of CSR  ...\n1, 2, 3, ......10.........20.........30.........40.........50.........60..\n.......70.........80.........90.........100.........110.........120.........130\n.........140.........150.........160.........170.........180.........190........\n.200.........210.........220.........230.........240.........250.........260......\n...270.........280.........290.........300.........310.........320.........330....\n.....340.........350.........360.........370.........380.........390.........400..\n.......410.........420.........430.........440.........450.........460.........470\n.........480.........490.........500.........510.........520.........530........\n.540.........550.........560.........570.........580.........590.........600......\n...610.........620.........630.........640.........650.........660.........670....\n.....680.........690.........700.........710.........720.........730.........740..\n.......750.........760.........770.........780.........790.........800.........810\n.........820.........830.........840.........850.........860.........870........\n.880.........890.........900.........910.........920.........930.........940......\n...950.........960.........970.........980.........990........\n999.\n\nDone.\n\n\n\nplot(F_CK.csr)"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#tampines-planning-area-1",
@@ -963,14 +963,14 @@
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#computing-f-function-estimation-1",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.11.3.1 Computing F-function Estimation",
-    "text": "3.11.3.1 Computing F-function Estimation\nMonte Carlo test with F-function\n{r} F_tm = Fest(childcare_tm_ppp, correction = \"best\") plot(F_tm)}"
+    "text": "3.11.3.1 Computing F-function Estimation\nMonte Carlo test with F-function\n\nF_tm = Fest(childcare_tm_ppp, correction = \"best\") \n\n\nplot(F_tm)"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-3",
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-3",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.11.3.2 Performing Complete Spatial Randomness Test",
-    "text": "3.11.3.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Tampines are randomly distributed.\nH1= The distribution of childcare services at Tampines are not randomly distributed.\nThe null hypothesis will be rejected is p-value is smaller than alpha value of 0.001.\n\nThe code chunk below is used to perform the hypothesis testing.\n{r} F_tm.csr &lt;- envelope(childcare_tm_ppp, Fest, correction = \"all\", nsim = 999)}\n{r} plot(F_tm.csr)}"
+    "text": "3.11.3.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Tampines are randomly distributed.\nH1= The distribution of childcare services at Tampines are not randomly distributed.\nThe null hypothesis will be rejected is p-value is smaller than alpha value of 0.001.\n\nThe code chunk below is used to perform the hypothesis testing.\n\nF_tm.csr &lt;- envelope(childcare_tm_ppp, Fest, correction = \"all\", nsim = 999)\n\nGenerating 999 simulations of CSR  ...\n1, 2, 3, ......10.........20.........30.........40.........50.........60..\n.......70.........80.........90.........100.........110.........120.........130\n.........140.........150.........160.........170.........180.........190........\n.200.........210.........220.........230.........240.........250.........260......\n...270.........280.........290.........300.........310.........320.........330....\n.....340.........350.........360.........370.........380.........390.........400..\n.......410.........420.........430.........440.........450.........460.........470\n.........480.........490.........500.........510.........520.........530........\n.540.........550.........560.........570.........580.........590.........600......\n...610.........620.........630.........640.........650.........660.........670....\n.....680.........690.........700.........710.........720.........730.........740..\n.......750.........760.........770.........780.........790.........800.........810\n.........820.........830.........840.........850.........860.........870........\n.880.........890.........900.........910.........920.........930.........940......\n...950.........960.........970.........980.........990........\n999.\n\nDone.\n\n\n\nplot(F_tm.csr)"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#choa-chu-kang-planning-area-2",
@@ -984,14 +984,14 @@
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#computing-k-function-estimate",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.12.1.1 Computing K-function Estimate",
-    "text": "3.12.1.1 Computing K-function Estimate\n{r} K_ck = Kest(childcare_ck_ppp, correction = \"Ripley\") plot(K_ck, . -r ~ r, ylab= \"K(d)-r\", xlab = \"d(m)\")}"
+    "text": "3.12.1.1 Computing K-function Estimate\n\nK_ck = Kest(childcare_ck_ppp, correction = \"Ripley\") \n\n\nplot(K_ck, . -r ~ r, ylab= \"K(d)-r\", xlab = \"d(m)\")"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-4",
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-4",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.12.1.2 Performing Complete Spatial Randomness Test",
-    "text": "3.12.1.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Choa Chu Kang are randomly distributed.\nH1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.\nThe null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.\n\nThe code chunk below is used to perform the hypothesis testing.\n{r} K_ck.csr &lt;- envelope(childcare_ck_ppp, Kest, nsim = 99, rank = 1, glocal=TRUE)}\n{r} plot(K_ck.csr, . - r ~ r, xlab=\"d\", ylab=\"K(d)-r\")}"
+    "text": "3.12.1.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Choa Chu Kang are randomly distributed.\nH1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.\nThe null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.\n\nThe code chunk below is used to perform the hypothesis testing.\n\nK_ck.csr &lt;- envelope(childcare_ck_ppp, Kest, nsim = 99, rank = 1, glocal=TRUE)\n\nGenerating 99 simulations of CSR  ...\n1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,\n21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,\n41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,\n61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80,\n81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, \n99.\n\nDone.\n\n\n\nplot(K_ck.csr, . - r ~ r, xlab=\"d\", ylab=\"K(d)-r\")"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#tampines-planning-area-2",
@@ -1005,14 +1005,14 @@
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#computing-k-function-estimation",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.12.2.1 Computing K-function Estimation",
-    "text": "3.12.2.1 Computing K-function Estimation\n{r} K_tm = Kest(childcare_tm_ppp, correction = \"Ripley\") plot(K_tm, . -r ~ r, ylab= \"K(d)-r\", xlab = \"d(m)\", xlim=c(0,1000))}"
+    "text": "3.12.2.1 Computing K-function Estimation\n\nK_tm = Kest(childcare_tm_ppp, correction = \"Ripley\") \n\n\nplot(K_tm, . -r ~ r, ylab= \"K(d)-r\", xlab = \"d(m)\", xlim=c(0,1000))"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-5",
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-5",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.12.2.2 Performing Complete Spatial Randomness Test",
-    "text": "3.12.2.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Tampines are randomly distributed.\nH1= The distribution of childcare services at Tampines are not randomly distributed.\nThe null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.\n\nThe code chunk below is used to perform the hypothesis testing.\n{r} K_tm.csr &lt;- envelope(childcare_tm_ppp, Kest, nsim = 99, rank = 1, glocal=TRUE)}\n{r} plot(K_tm.csr, . - r ~ r, xlab=\"d\", ylab=\"K(d)-r\", xlim=c(0,500))}"
+    "text": "3.12.2.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Tampines are randomly distributed.\nH1= The distribution of childcare services at Tampines are not randomly distributed.\nThe null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.\n\nThe code chunk below is used to perform the hypothesis testing.\n\nK_tm.csr &lt;- envelope(childcare_tm_ppp, Kest, nsim = 99, rank = 1, glocal=TRUE)\n\nGenerating 99 simulations of CSR  ...\n1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,\n21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,\n41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,\n61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80,\n81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, \n99.\n\nDone.\n\n\n\nplot(K_tm.csr, . - r ~ r, xlab=\"d\", ylab=\"K(d)-r\", xlim=c(0,500))"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#choa-chu-kang-planning-area-3",
@@ -1026,14 +1026,14 @@
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#computing-l-function-estimation",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.13.1.1 Computing L Function Estimation",
-    "text": "3.13.1.1 Computing L Function Estimation\n{r} L_ck = Lest(childcare_ck_ppp, correction = \"Ripley\") plot(L_ck, . -r ~ r, ylab= \"L(d)-r\", xlab = \"d(m)\")}"
+    "text": "3.13.1.1 Computing L Function Estimation\n\nL_ck = Lest(childcare_ck_ppp, correction = \"Ripley\") \n\n\nplot(L_ck, . -r ~ r, ylab= \"L(d)-r\", xlab = \"d(m)\")"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-6",
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-6",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.13.1.2 Performing Complete Spatial Randomness Test",
-    "text": "3.13.1.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Choa Chu Kang are randomly distributed.\nH1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.\nThe null hypothesis will be rejected if p-value if smaller than alpha value of 0.001.\n\nThe code chunk below is used to perform the hypothesis testing.\n{r} L_ck.csr &lt;- envelope(childcare_ck_ppp, Lest, nsim = 99, rank = 1, glocal=TRUE)}\n{r} plot(L_ck.csr, . - r ~ r, xlab=\"d\", ylab=\"L(d)-r\")}"
+    "text": "3.13.1.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Choa Chu Kang are randomly distributed.\nH1= The distribution of childcare services at Choa Chu Kang are not randomly distributed.\nThe null hypothesis will be rejected if p-value if smaller than alpha value of 0.001.\n\nThe code chunk below is used to perform the hypothesis testing.\n\nL_ck.csr &lt;- envelope(childcare_ck_ppp, Lest, nsim = 99, rank = 1, glocal=TRUE)\n\nGenerating 99 simulations of CSR  ...\n1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,\n21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,\n41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,\n61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80,\n81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, \n99.\n\nDone.\n\n\n\nplot(L_ck.csr, . - r ~ r, xlab=\"d\", ylab=\"L(d)-r\")"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#tampines-planning-area-3",
@@ -1047,13 +1047,13 @@
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#computing-l-function-estimation-1",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.13.2.1 Computing L-function Estimation",
-    "text": "3.13.2.1 Computing L-function Estimation\n{r} L_tm = Lest(childcare_tm_ppp, correction = \"Ripley\") plot(L_tm, . -r ~ r, ylab= \"L(d)-r\", xlab = \"d(m)\", xlim=c(0,1000))}"
+    "text": "3.13.2.1 Computing L-function Estimation\n\nL_tm = Lest(childcare_tm_ppp, correction = \"Ripley\") \n\n\nplot(L_tm, . -r ~ r, ylab= \"L(d)-r\", xlab = \"d(m)\", xlim=c(0,1000))"
   },
   {
     "objectID": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-7",
     "href": "Hands-on_Ex/Hands-on_Ex03/Hands-on_Ex3.html#performing-complete-spatial-randomness-test-7",
     "title": "Hands-on Exercise 3: 1st & 2nd Order Spatial Point Patterns Analysis Methods",
     "section": "3.13.2.2 Performing Complete Spatial Randomness Test",
-    "text": "3.13.2.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Tampines are randomly distributed.\nH1= The distribution of childcare services at Tampines are not randomly distributed.\nThe null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.\n\nThe code chunk below will be used to perform the hypothesis testing.\n{r} L_tm.csr &lt;- envelope(childcare_tm_ppp, Lest, nsim = 99, rank = 1, glocal=TRUE)}\nThen, plot the model output by using the code below.\n{r} plot(L_tm.csr, . - r ~ r, xlab=\"d\", ylab=\"L(d)-r\", xlim=c(0,500))}"
+    "text": "3.13.2.2 Performing Complete Spatial Randomness Test\nTo confirm the observed spatial patterns above, a hypothesis test will be conducted. The hypothesis and test are as follows:\n\nHo = The distribution of childcare services at Tampines are randomly distributed.\nH1= The distribution of childcare services at Tampines are not randomly distributed.\nThe null hypothesis will be rejected if p-value is smaller than alpha value of 0.001.\n\nThe code chunk below will be used to perform the hypothesis testing.\n\nL_tm.csr &lt;- envelope(childcare_tm_ppp, Lest, nsim = 99, rank = 1, glocal=TRUE)\n\nGenerating 99 simulations of CSR  ...\n1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,\n21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,\n41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60,\n61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80,\n81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, \n99.\n\nDone.\n\n\nThen, plot the model output by using the code below.\n\nplot(L_tm.csr, . - r ~ r, xlab=\"d\", ylab=\"L(d)-r\", xlim=c(0,500))"
   }
 ]
