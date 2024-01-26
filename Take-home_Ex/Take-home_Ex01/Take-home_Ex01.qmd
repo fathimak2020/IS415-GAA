@@ -1,16 +1,16 @@
 ---
-title: "Take-home Exercise 1"
+title: "Take-home Exercise 1: Application of Spatial Point Patterns Analysis to Discover the Geographical Distribution of Grab Hailing Services in Singapore"
 ---
 
-# Overview
+# 1 Overview
 
-## Setting the scene
+## 1.1 Setting the scene
 
-Understanding how people move around in a city is like figuring out its heartbeat—it shows us the rhythms that shape our urban lives. Thanks to smartphones and technology, we now have a bunch of data about how people move. When we use smart analysis tools like Geographic Information System (GIS), we can unlock valuable insights that help us plan cities better.
+Understanding how people move around in a city is like figuring out its heartbeat—it shows us the rhythms that shape our urban lives. Thanks to smartphones and technology, we now have a bunch of data about how people move. When we use smart analysis tools like GIS, we can unlock valuable insights that help us plan cities better.
 
-In 2020, GRAB, a big taxi company, shared a cool set of data called Grab Posisi, all about how people move around in Singapore. It's like a special view into the city's heartbeat. This kind of information isn't just interesting; it's super helpful for businesses, people who make decisions about the city, and those who plan how cities work. It's like having a dynamic picture of how folks move, helping us create cities that work well for everyone. Human mobility data isn't just about numbers—it's like a guide for building cities that fit the way people live and move.
+In 2020, GRAB shared a set of data called Grab Posisi, all about how people move around in Singapore. This kind of information isn't just interesting; it's super helpful for businesses, people who make decisions about the city, and those who plan how cities work. It's like having a dynamic picture of how people move, helping us create cities that work well for everyone.
 
-## Objectives
+## 1.2 Objectives
 
 The objectives of this exercise are to:
 
@@ -18,42 +18,47 @@ The objectives of this exercise are to:
 
 -   Use spatial point patterns analysis methods to explore Grab hailing services distribution in Singapore
 
--   Organize geospatial data into sf tibble data.frames using sf and tidyverse functions
+-   Organise geospatial data into sf tibble data.frames using sf and tidyverse functions
 
--   Focus on Grab taxi location points (origins or destinations), road layer within Singapore (excluding outer islands), and Singapore boundary layer (excluding outer islands)
+-   Focus on Grab taxi location points , road layer within Singapore, and Singapore boundary layer
 
 -   Generate traditional Kernel Density Estimation layers from the extracted data
 
 -   Create either Network Kernel Density Estimation (NKDE) or Temporal Network Kernel Density Estimation (TNKDE) layers
 
--   Utilize tmap functions to display kernel density layers on an openstreetmap of Singapore
+-   Utilise tmap functions to display kernel density layers on an openstreetmap of Singapore
 
 -   Describe spatial patterns revealed by the kernel density maps
 
 By this exercise, I will:
 
--   Enhance my understanding of geospatial analytics applications Develop proficiency in spatial point patterns analysis
--   Gain hands-on experience in organizing geospatial data using sf and tidyverse functions
+-   Enhance my understanding of geospatial analytics applications
+
+-   Develop proficiency in spatial point patterns analysis
+
+-   Gain hands-on experience in organising geospatial data using sf and tidyverse functions
+
 -   Explore Grab hailing services distribution patterns in Singapore
+
 -   Generate and interpret Kernel Density Estimation layers
+
 -   Understand the nuances of Network Kernel Density Estimation (NKDE) or - Temporal Network Kernel Density Estimation (TNKDE)
--   Master the visualization of spatial patterns using tmap functions on an openstreetmap
 
-# Getting Started
+-   Master the visualisation of spatial patterns using tmap functions on an openstreetmap
 
-## Data Acquisition
+# 2 Getting Started
+
+## 2.1 Data Acquisition
 
 The study will utilise the following datasets to explore spatial point patterns analysis methods and reveal the geographical and spatio-temporal distribution of Grab hailing services locations in Singapore.
 
 | Dataset Name                               | Type                | Source                                                              | Path                                                  |
-|-----------------|-----------------|----------------------|-----------------|
+|----------------|----------------|-----------------------|------------------|
 | Grab-Posisi                                | Aspatial (.parquet) | <https://engineering.grab.com/grab-posisi>                          | data/aspatial/grabPosisi                              |
-| Master Plan 2019 Subzone Boundary (No Sea) | Geospatial (.kml)   | <https://beta.data.gov.sg/collections/2104/view>                    | data/geospatial/MasterPlan2019SubzoneBoundaryNoSeaKML |
+| Master Plan 2019 Subzone Boundary (No Sea) | Geospatial (.shp)   | <https://beta.data.gov.sg/collections/2104/view>                    | data/geospatial/MasterPlan2019SubzoneBoundaryNoSeaKML |
 | Open Street Map Raod Data                  | Geospatial (.shp)   | <https://download.geofabrik.de/asia/malaysia-singapore-brunei.html> | data/geospatial/OSM/gis_osm_roads_free_1              |
 
-## **Installing Packages & Importing the Data**
-
-## **Install Relevant R Packages**
+## **2.2 Importing Relevant R Packages**
 
 The R packages used in this project are:
 
@@ -69,9 +74,13 @@ The R packages used in this project are:
 
 -   `spatstat`: for performing spatial point patterns analysis
 
--   `sfdep`: for analysing spatial dependencies
+-   `dplyr`
 
--   dplyr
+-   `arrow`
+
+-   `lubridate`: undefined
+
+-   `rgdal`
 
 Pacman assists us by helping us load R packages that we require.
 
@@ -81,39 +90,146 @@ pacman::p_load(arrow, lubridate, tidyverse, tmap, sf, maptools, spatstat, raster
 ## install.packages("maptools", repos = "https://packagemanager.posit.co/cran/2023-10-13")
 ```
 
-## Importing Geospatial Datasets
+## 2.3 Importing Geospatial Datasets
 
-## Master Plan 2019 Subzone Boundary (No Sea)
+## 2.3.1 Master Plan 2019 Subzone Boundary (No Sea)
+
+For the shapefile format, two arguments are required: `dsn` to define the data path, and `layer` to provide the shapefile name. 
 
 ```{r}
-mpsz = st_read("data/geospatial/MasterPlan2019SubzoneBoundaryNoSeaKML.kml")
+mpsz_sf <- st_read(dsn = "data/geospatial", 
+                layer = "MPSZ-2019") %>% st_transform(crs = 3414)
 ```
 
-## Open Street Map Road Data
+::: callout-important
+**Project Transformation**
+
+Given that our dataset corresponds to the geographical boundaries of Singapore, it's essential to specify the appropriate CRS for accurate spatial analysis. To achieve this, the **`st_transform()`** function is used to convert the CRS of `mpsz_sf` to SVY21 (EPSG: 3414)
+:::
+
+## 2.3.2 Coastal Outline
+
+In order to create a costal outline of singapore, we will use the `st_union` function to consolidate all subzone boundaries into a single polygon.
+
+```{r}
+outline = mpsz_sf %>% st_union()
+plot(outline)
+```
+
+## 2.3.2.1 Extracting outer islands
+
+As seen in the figure above, the coastal outline includes outer islands where Grab service is unavailable. Through the code chunk below, we shall use the `subset` function to select planning subzones from the `mpsz_sf` dataset to exclude. These rows of data are stored in new dataframes.
+
+```{r}
+semakau <- subset(mpsz_sf,mpsz_sf$SUBZONE_N == "SEMAKAU")
+sudong <- subset(mpsz_sf, mpsz_sf$SUBZONE_N == "SUDONG")
+north <- subset(mpsz_sf, mpsz_sf$SUBZONE_N == "NORTH-EASTERN ISLANDS")
+south <- subset(mpsz_sf, mpsz_sf$SUBZONE_N == "SOUTHERN GROUP")
+```
+
+We combine the newly created dataframes using the `bind_rows` function.
+
+```{r}
+outerislands <- dplyr::bind_rows(list(semakau,sudong, north,south))
+```
+
+## 2.3.2.2 Rendering a Coastal Boundary Excluding Outer Islands
+
+We use the st_union function to merge the geometries of `mpsz_sf` and `outerislands` and the `st_difference` function to eliminate the overlap.
+
+```{r}
+sg_sf <- st_difference(st_union(mpsz_sf), st_union(outerislands))
+plot(sg_sf)
+```
+
+::: callout-tip
+✅ Task Complete! We have extracted Singapore boundary layer excluding outer islands.
+:::
+
+## 2.3.3 Open Street Map Road Data
 
 ```{r}
 allroads = st_read(dsn = "data/geospatial/OSM", 
-                         layer = "gis_osm_roads_free_1")
+                         layer = "gis_osm_roads_free_1")  %>% st_transform(crs = 3414)
 ```
 
-## Importing Aspatial Datasets
+::: callout-important
+**Project Transformation**
 
-## Grab-Posisi
+Given that our dataset corresponds to the geographical boundaries of Singapore, it's essential to specify the appropriate CRS for accurate spatial analysis. To achieve this, the **`st_transform()`** function is used to convert the CRS of `allroads` to SVY21 (EPSG: 3414)
+:::
+
+This dataset encompasses road networks spanning Singapore, Malaysia, and Brunei. To narrow our focus, we will extract roads exclusively within the Singapore boundary using the `st_intersection` function.
 
 ```{r}
-grab <- read_parquet("data/aspatial/GrabPosisi/part-00000.parquet")
-glimpse(grab)
+sg_roads_all <- st_intersection(allroads,sg_sf)
 ```
 
-The field ‘pingtimestamp’ is not in proper date-time format. The following code chunk converts the data type of pingtimestamp from character to date-time format.
+Next, we will examine the road network's road types.
+
+```{r}
+unique(sg_roads_all$fclass)
+```
+
+Given our focus on Grab services, which primarily operate on motorways, we will extract the motorway type from the road network.
+
+```{r}
+#sg_roads <- sg_roads_all %>%
+ # filter(class == "motorway")
+```
+
+We will now visualise the motorway road type within the boundaries of Singapore.
+
+```{r}
+tm_shape(sg_sf) +   tm_borders(lwd = 2, col = 'grey') +   tm_shape(sg_roads_all) +   tm_lines(col = 'brown4') +   tm_layout(frame = FALSE)
+```
+
+::: callout-tip
+✅ Task Complete! Road layer within Singapore excluding outer islands.
+:::
+
+## 2.4 Importing Aspatial Datasets
+
+## 2.4.1 Grab-Posisi
+
+Grab-Posisi, is a GPS trajectory dataset. Each trajectory is serialised in a file in Apache Parquet format. 
+
+We will use the `read_parquet` function from the `arrow` package, to read Parquet files.
+
+```{r}
+grab0 <- read_parquet("data/aspatial/GrabPosisi/part-00000.parquet", as_data_frame = TRUE)
+grab1 <- read_parquet("data/aspatial/GrabPosisi/part-00001.parquet", as_data_frame = TRUE)
+grab2 <- read_parquet("data/aspatial/GrabPosisi/part-00002.parquet", as_data_frame = TRUE)
+grab3 <- read_parquet("data/aspatial/GrabPosisi/part-00003.parquet", as_data_frame = TRUE)
+grab4 <- read_parquet("data/aspatial/GrabPosisi/part-00004.parquet", as_data_frame = TRUE)
+grab5 <- read_parquet("data/aspatial/GrabPosisi/part-00005.parquet", as_data_frame = TRUE)
+grab6 <- read_parquet("data/aspatial/GrabPosisi/part-00006.parquet", as_data_frame = TRUE)
+grab7 <- read_parquet("data/aspatial/GrabPosisi/part-00007.parquet", as_data_frame = TRUE)
+grab8 <- read_parquet("data/aspatial/GrabPosisi/part-00008.parquet", as_data_frame = TRUE)
+grab9 <- read_parquet("data/aspatial/GrabPosisi/part-00009.parquet", as_data_frame = TRUE)
+```
+
+Then we join all into one dataframe.
+
+```{r}
+grab <- bind_rows(grab0,grab1, grab2,grab3,grab4,grab5,grab6,grab7,grab8,grab9) 
+```
+
+```{r}
+head(grab)
+```
+
+The `head` function reveals that there are 9 columns in the dataframe.
+
+The field `pingtimestamp` is not in proper date-time format. It is stored as an `int` value. The following code chunk converts the data type of `pingtimestamp` from `int` to `date-time` format.
 
 ```{r}
 grab$pingtimestamp <- as_datetime(grab$pingtimestamp)
 ```
 
-## Converting Aspatial Data Frame into a Simple Feature Data Frame
+## 2.4.1.2 Converting Aspatial Data Frame into a Simple Feature Data Frame
 
-Assumption: The data is in the wgs84 Geographic Coordinate System on account of its latitude/longtitude fields. WGS84 = EPSG4326, 3414 = SVY21
+We will proceed to convert the `grab` dataset, currently in an aspatial data frame, into an sf tibble dataframe.
 
 ```{r}
 grab_sf <- st_as_sf(grab, 
@@ -122,112 +238,47 @@ grab_sf <- st_as_sf(grab,
   st_transform(crs = 3414)
 ```
 
-This gives us the new simple feature data frame, grab_sf:
+::: callout-important
+**Project Transformation**
 
-```{r}
-glimpse(grab_sf)
-```
-
-Note that a new column called geometry has been added! In addition, longtitude and latitude have both been dropped.
-
-## Project Transformation
-
-coordinate system differed among our data frames: mpsz and road are wgs84. while grab is svy21, we might run into issues when we’re performing geoprocessing, because a geographic coordinate system is not appropriate if our analysis needs distance or/and area measurements.
-
-For MPSZ, CRS is WGS84
-
-```{r}
-st_crs(mpsz)
-```
-
-Output shows that it is in WGS 84 and EPSG 4326.We want to covert to the correct EPSG code for svy21 which is 3414.
-
-```{r}
-#st_geometry_type(mpsz)
-mpsz <- st_cast(mpsz, "MULTIPOLYGON")
-mpsz <- st_zm(mpsz) # Convert all sub-geometries to 2D
-
-mpsz3414 <- st_transform(mpsz, crs = 3414)
-
-#mpsz3414 <- st_set_crs(mpsz, 3414)
-#st_crs(mpsz3414)
-```
-
-```{r}
-st_crs(allroads)
-```
-
-Output shows that it is in WGS 84 and EPSG 4326.We want to covert to the correct EPSG code for svy21 which is 3414.
-
-```{r}
-allroads3414 <- st_transform(allroads,crs =3414)
-
-#allroads3414 <- st_set_crs(allroads, 3414)
-#st_crs(allroads3414)
-```
-
-```{r}
-st_crs(grab_sf)
-```
-
-Note: Grab's transformation already occured in earlier step
-
-```{r}
-#outline <- plot(st_geometry(mpsz))
-```
-
-```{r}
-##for backup
-outline <- st_read(dsn = "data/geospatial", layer="CostalOutline")
-```
-
-::: callout-tip
-✅ Task Complete! Singapore boundary layer excluding outer islands
+Assuming the dataset is initially in the WGS84 Geographic Coordinate System, as indicated by its latitude/longitude fields, we need to define the suitable CRS for spatial analysis within Singapore. The `st_transform()` function is utilised to convert the CRS of the `grab` dataset to SVY21 (EPSG: 3414).
 :::
 
-```{r}
-st_crs(outline)
-```
+This gives us the new simple feature data frame, `grab_sf`
 
-```{r}
-outline3414 <- st_transform(outline,crs =3414)
-plot(outline3414)
-```
+## 2.4.2 Data Wrangling
 
-Now they are all in svy21 projected coordinate system!
+## 2.4.2.1 **Extracting Grab Trips Starting Locations**
 
-## Road intersection with SG coastline
+We will extract trip starting point for all unqiue trajectories and store them to a new df named `grab_origin`. To isolate the origin locations, we employ the following methodology:
 
-```{r}
-sg_roads <- st_intersection(outline3414,allroads3414)
-```
+1.  **Grouping by Trajectory ID:**
 
-```{r}
-summary(sg_roads)
+    -   The dataset is grouped by the unique trajectory identifier (**`trj_id`**).
 
-```
+2.  **Arranging by Timestamp:**
 
-##Visualising Road Intersection with coastal outline
+    -   Within each trajectory group, records are arranged in ascending order based on the timestamp (**`pingtimestamp`**).
 
-```{r}
-tm_shape(outline3414) +
-  tm_borders(lwd = 2, col = 'grey') +
-  tm_shape(sg_roads) +
-  tm_lines(col = 'brown4') +
-  tm_layout(frame = FALSE)
-```
+3.  **Filtering for the First Row:**
 
-::: callout-tip
-✅ Task Complete! Road layer within Singapore excluding outer islands.
-:::
+    -   By selecting the first row within each grouped trajectory (**`row_number() == 1`**), we identify the earliest recorded location for each trip. This is indicative of the trip's starting point.
 
-## Extracting Grab trips starting locations
+4.  **Adding Temporal Information:**
+
+    -   Additional temporal context is provided by introducing new columns:
+
+        -   **`weekday`**: Day of the week based on the timestamp.
+
+        -   **`start_hr`**: Starting hour of the trip.
+
+        -   **`day`**: Day of the month when the trip commenced.
 
 ```{r}
 grab_origin <- grab_sf %>%
   group_by(trj_id) %>%
   arrange (pingtimestamp) %>%
-  filter(row_number()==1) %>% #first row gives origin location 
+  filter(row_number()==1) %>% #after sorting by timestamp, first row gives origin location 
   mutate(weekday = wday(pingtimestamp, #define workday
                         label = TRUE,
                         abbr = TRUE), #Monday = MON 
@@ -239,7 +290,9 @@ grab_origin <- grab_sf %>%
 ✅ Task Complete! Grab taxi location points either by origins or destinations.
 :::
 
-## Extracting Grab trips ending locations
+## 2.4.2.2 **Extracting Trip Ending Locations**
+
+We will extract trip ending point for all unique trajectories and store them to a new df named `grab_dest`. We employ a similar methodology to extracting a trips origin location. Except here, within each trajectory group, records are arranged in descending order based on the timestamp (**`pingtimestamp`**). By selecting the first row within each grouped trajectory (**`row_number() == 1`**), we identify the latest recorded location for each trip. This corresponds to the trip's ending point.
 
 ```{r}
 grab_dest <- grab_sf %>%
@@ -257,91 +310,33 @@ grab_dest <- grab_sf %>%
 ✅ Task Complete! Grab taxi location points either by origins or destinations.
 :::
 
-##Data Cleaning
+## Converting the Simple Features to Planar Point Pattern Object
 
-Select only relevant columnns from Grab
-
-```{r}
-weekday_am_peak <- grab_sf %>%
-  mutate(weekday = wday(pingtimestamp, label = TRUE, abbr = TRUE),
-         hour = hour(pingtimestamp)) %>%
-  filter(weekday %in% c("Mon", "Tue", "Wed", "Thu", "Fri") &
-           between(hour, 6, 9)) %>%
-  subset(select = c("trj_id", "pingtimestamp", "weekday", "geometry", "hour"))
-
-```
-
-```{r}
-weekday_pm_peak <- grab_sf %>%
-  mutate(weekday = wday(pingtimestamp, label = TRUE, abbr = TRUE),
-         hour = hour(pingtimestamp)) %>%
-  filter(weekday %in% c("Mon", "Tue", "Wed", "Thu", "Fri") &
-           between(hour, 17, 20)) %>%
-  subset(select = c("trj_id", "pingtimestamp", "weekday", "geometry", "hour"))
-```
-
-```{r}
-weekend_am_peak <- grab_sf %>%
-  mutate(weekday = wday(pingtimestamp, label = TRUE, abbr = TRUE),
-         hour = hour(pingtimestamp)) %>%
-  filter(weekday %in% c("Sat", "Sun") &
-           between(hour, 11, 14)) %>%
-  subset(select = c("trj_id", "pingtimestamp", "weekday", "geometry", "hour"))
-```
-
-```{r}
-weekend_pm_peak <- grab_sf %>%
-  mutate(weekday = wday(pingtimestamp, label = TRUE, abbr = TRUE),
-         hour = hour(pingtimestamp)) %>%
-  filter(weekday %in% c("Sat", "Sun") &
-           between(hour, 16, 19)) %>%
-  subset(select = c("trj_id", "pingtimestamp", "weekday", "geometry", "hour"))
-
-```
-
-## Converting sf data frames to sp’s Spatial\* class
 
 Firstly, we’ll need to convert the simple features data frames into Spatial\* classes if we can to do SPPA on it:
 
 ```{r}
-mpsz <- as_Spatial(mpsz3414)
-sg_roads <- as_Spatial(sg_roads)
-outline <- as_Spatial(outline3414)
-grab_origin <- as_Spatial(grab_origin)
-grab_dest <- as_Spatial(grab_dest)
-weekday_am_peak <- as_Spatial(weekday_am_peak)
+grab_origin_ppp <- as.ppp(st_coordinates(grab_origin), st_bbox(grab_origin))
+par(mar = c(0,0,1,0))
+plot(grab_origin_ppp)
 ```
-
-## Converting from Spatial\* classes to sp format
-
-spatstat requires the analytical data to be in ppp object form, but since there is no way to directly convert a Spatial\* classes into ppp object, we’ll need to convert the Spatial\* classes into a generic Spatial object first, then convert the generic sp object into ppp object form.
 
 ```{r}
-# convert into respective sp (in our case, either polygons or points)
-mpsz_sp <- as(mpsz, "SpatialPolygons")
-sg_roads_sp <- as(sg_roads, "SpatialLinesDataFrame")
-outline_sp <- as(outline, "SpatialPolygons")
-grab_origin_sp <- as(grab_origin, "SpatialPoints")
-grab_dest_sp <- as(grab_dest, "SpatialPoints")
-weekday_am_peak_sp <- as(weekday_am_peak, "SpatialPoints")
+grab_dest_ppp <- as.ppp(st_coordinates(grab_dest), st_bbox(grab_dest))
+par(mar = c(0,0,1,0))
+plot(grab_dest_ppp)
 ```
 
-##Converting from sp format to spatstat ppp format
+::: callout-tip
+Note: It is not neccesary to change `sg_sf` into a ppp object as it will be converted to `owin` instead. 
+:::
 
-Note that there is no way of coercing SpatialPolygons to ppp format - nor is there any need to. As such, we won’t be including our ‘base maps’, mpsz and sg.
 
-```{r}
-# from sp object, convert into ppp format
-
-grab_origin_ppp <- as(grab_origin_sp, "ppp")
-grab_dest_ppp <- as(grab_dest_sp, "ppp")
-weekday_am_peak_ppp <- as(weekday_am_peak_sp, "ppp")
-```
+## Check for duplicates and Handle Data Errors
 
 ```{r}
 summary(grab_origin_ppp)
 summary(grab_dest_ppp)
-summary(weekday_am_peak_ppp)
 ```
 
 Note: grab_origin_ppp objecs has no duplicated points, just to be sure, check again
@@ -349,139 +344,99 @@ Note: grab_origin_ppp objecs has no duplicated points, just to be sure, check ag
 ```{r}
 any(duplicated(grab_origin_ppp)) 
 any(duplicated(grab_dest_ppp)) 
-any(duplicated(weekday_am_peak_ppp)) 
-```
-
-```{r}
-weekday_am_peak_ppp_jit <- rjitter(weekday_am_peak_ppp, 
-                             retry=TRUE, 
-                             nsim=1, 
-                             drop=TRUE)
-```
-
-```{r}
-any(duplicated(weekday_am_peak_ppp_jit)) 
-
 ```
 
 ##Introducing the owin object
 
-Usually, when analysing spatial point patterns, we’ll confine our analysis within a certain geographical area - such as the Singapore boundary. In spatstat, an object called owin is specially designed to represent this polygonal region. This is also why I mentioned in 5.3 that there was no need (nor existing functions) to convert our ‘base maps’ into ppp - because they’re meant to be converted into owin instead.
+Usually, when analysing spatial point patterns, we’ll confine our analysis within a certain geographical area - such as the Singapore boundary. In spatstat, an object called owin is specially designed to represent this polygonal region. 
 
 ##Creating owin object
 
 ```{r}
-# using sg_sp as it is the CostalOutline of Singapore, i.e. the whole island's boundary
-outline_owin <- as(outline_sp, "owin")
-plot(outline_owin)
+sg_owin <- as(sg_sf, "owin")
+plot(sg_owin)
 ```
 
-##COMBINING POINT EVENTS OBJECT AND OWIN OBJECT Now, we’ll extract the relevant events that are located within the Singapore:
+## Combining Point Events and OWIN Object
+
+Now, we’ll extract the relevant events that are located within Singapore.
 
 ```{r}
-grab_origin_ppp_sg <- grab_origin_ppp[outline_owin]
+grab_origin_ppp_sg <- grab_origin_ppp[sg_owin]
 plot(grab_origin_ppp_sg)
 ```
 
 ```{r}
-grab_dest_ppp_sg <- grab_dest_ppp[outline_owin]
+grab_dest_ppp_sg <- grab_dest_ppp[sg_owin]
 plot(grab_dest_ppp_sg)
 ```
 
-```{r}
-weekday_am_peak_ppp_jit_sg <- weekday_am_peak_ppp_jit[outline_owin]
-plot(weekday_am_peak_ppp_jit_sg)
-```
 
-```{r}
-par(mfrow=c(1,3))
-plot(grab_origin_ppp_sg)
-plot(grab_dest_ppp_sg)
-plot(weekday_am_peak_ppp_jit_sg)
-```
+## Exploratoty Spatial Data Analysis 
 
-```{r}
-#midpoints <- coordinates(gLineMidpoints(sg_roads_sp))
-#sg_roads_ppp <- ppp(midpoints[,1], midpoints[,2], window = #as.owin(outline_owin))
-#plot(sg_roads_ppp)
-```
-
-## EDA
-
-Rescaling to kilometers we’ll need to use rescale() of the spatstat package, so as to convert meters (which SVY21 uses) into kilometers (our desired unit of measurement)
+`grab_original_ppp_sg` and `grab_dest_ppp_sg` is in metres. For futher analysis, we are required to rescale our data to kilometers, we can do so using `rescale()`
 
 ```{r}
 grab_origin_ppp_sg_km <- rescale(grab_origin_ppp_sg, 1000, 'km')
 grab_dest_ppp_sg_km <- rescale(grab_dest_ppp_sg, 1000, 'km')
-weekday_am_peak_ppp_jit_sg_km <- rescale(weekday_am_peak_ppp_jit_sg, 1000, 'km')
 ```
 
-6.2 Computing kernel density estimation using automatic bandwidth selection method
 
-going wiht bw.ppl , no significant cluster bw.ppl had warning : Warning: point-in-polygon test had difficulty with 215 points (total score not 0 or 1) so went with bw.diggle
+##First-Order Spatial Point Patterns Analysis
+
+ Computing kernel density estimation using automatic bandwidth selection method
 
 ```{r}
-grab_origin_ppp_sg_bw <- density(grab_origin_ppp_sg_km,
-                                   sigma=bw.diggle,
-                                   edge=TRUE,
-                                   kernel="gaussian")
-grab_dest_ppp_sg_bw <- density(grab_dest_ppp_sg_km,
-                                   sigma=bw.diggle,
-                                   edge=TRUE,
-                                   kernel="gaussian")
-weekday_am_peak_ppp_jit_sg_bw <- density(weekday_am_peak_ppp_jit_sg_km,
+kde_grab_origin_sg_bw <- density(grab_origin_ppp_sg_km,
                                    sigma=bw.diggle,
                                    edge=TRUE,
                                    kernel="gaussian")
 ```
 
 ```{r}
-plot(grab_origin_ppp_sg_bw)
+plot(kde_grab_origin_sg_bw,main = "Default Density KDE for Origin Points")
 ```
 
 ```{r}
-plot(grab_dest_ppp_sg_bw)
+kde_grab_dest_sg_bw <- density(grab_dest_ppp_sg_km,
+                                   sigma=bw.diggle,
+                                   edge=TRUE,
+                                   kernel="gaussian")
 ```
 
 ```{r}
-plot(weekday_am_peak_ppp_jit_sg_bw)
+plot(kde_grab_dest_sg_bw,main = "Default Density KDE for Destination Points")
 ```
 
-##Converting KDE output into grid object into RasterLayer object Now, we have to convert our KDE outputs into RasterLayer objects. Since we can’t do that directly, we’ll need to convert them into a SpatialGridDataFrame first, then convert the SpatialGridDataFrame into RasterLayer objects:
+## Converting KDE output into grid object into RasterLayer object
 
 ```{r}
-grab_origin_ppp_sg_bw_raster <- grab_origin_ppp_sg_bw %>% 
+kde_grab_origin_sg_bw_raster <- kde_grab_origin_sg_bw %>% 
   as.SpatialGridDataFrame.im() %>% 
   raster()
 
-grab_dest_ppp_sg_bw_raster <- grab_dest_ppp_sg_bw %>% 
-  as.SpatialGridDataFrame.im() %>% 
-  raster()
-
-weekday_am_peak_ppp_jit_sg_bw_raster <- weekday_am_peak_ppp_jit_sg_bw %>% 
+kde_grab_dest_sg_bw_raster <- kde_grab_dest_sg_bw %>% 
   as.SpatialGridDataFrame.im() %>% 
   raster()
 ```
 
-```{r}
-grab_origin_ppp_sg_bw_raster
-```
-
-Note that the crs property is NA - let’s do something about that. We’ll assign projection systems again:
+Let's check the properties of our ratser layers 
 
 ```{r}
-# assigns CRS as ESPG Code 3414 aka the SVY21 projection system
-# while also specifying the units as km, since we rescaled it in the earlier section
-projection(grab_origin_ppp_sg_bw_raster) <- CRS("+init=EPSG:3414 +datum=WGS84 +units=km")
-projection(grab_dest_ppp_sg_bw_raster) <- CRS("+init=EPSG:3414 +datum=WGS84 +units=km")
-projection(weekday_am_peak_ppp_jit_sg_bw_raster) <- CRS("+init=EPSG:3414 +datum=WGS84 +units=km")
+kde_grab_origin_sg_bw_raster
 ```
 
-##Kernel Density Maps on OpenStreetMap
+There is no CRS assigned so we shall do so in the next step.
 
-MAKING A DENSITY MAP FUNCTION
+```{r}
+projection(kde_grab_origin_sg_bw_raster) <- CRS("+init=EPSG:3414 +datum=WGS84 +units=km")
+projection(kde_grab_dest_sg_bw_raster) <- CRS("+init=EPSG:3414 +datum=WGS84 +units=km")
+```
 
-Now, as the assignment requirements has specified, we should plot our kernel density maps on OpenStreetMap, aiming to describe the spatial patterns revealed as well as highlight the advantage of kernel density map over point map. Since we’ll be plotting a lot of kernel density maps, let’s create a function:
+
+## Kernel Density Maps on OpenStreetMap
+
+Making a Density Map function
 
 ```{r}
 density_map <- function(raster_object, map_title) {
@@ -498,56 +453,12 @@ tm_shape(raster_object) +
   } 
 ```
 
-PLOTTING DENSITY MAP
+Plotting Density Map
 
 ```{r}
-# input: a raster object and the map title
-# input: a raster object and the map title
-grab_origin_density_map <- density_map(grab_origin_ppp_sg_bw_raster, map_title = "Grab Origin Density Map")
-grab_dest_density_map <- density_map(grab_dest_ppp_sg_bw_raster, map_title = "Grab Destination Density Map")
-weekday_am_peak_density_map <- density_map(weekday_am_peak_ppp_jit_sg_bw_raster, map_title = "Weekday AM peak Density Map")
+grab_origin_density_map <- density_map(kde_grab_origin_sg_bw_raster, map_title = "Grab Origin Point Density Map")
+grab_dest_density_map <- density_map(kde_grab_dest_sg_bw_raster, map_title = "Grab Destination Point Density Map")
 ```
 
-```{r}
-grab_origin_density_map
-```
+## Kernel Density Map Analysis
 
-```{r}
-grab_dest_density_map
-```
-
-```{r}
-weekday_am_peak_density_map
-```
-
-##Kernel Density Maps Analysis
-
-Point Map
-
-```{r}
-tmap_mode("plot")
-tm_shape(mpsz3414) +
-  tm_borders(alpha = 0.5) +
-  tmap_options(check.and.fix = TRUE) +
-tm_shape(sg_roads) +
-  tm_dots(col="red", size=0.05) +
-  tm_layout(main.title = "Road Network Point Map",
-          main.title.position = "center",
-          main.title.size = 1.2,
-          frame = TRUE)
-```
-
-```{r}
-grab_origin_density_map
-```
-
-East Region Specific KDE Maps
-
-```{r}
-#central = mpsz_sf[mpsz_sf$REGION_N=='East REGION',]
-#central_owin <- central %>%
- #   as('Spatial') %>%
- #   as('SpatialPolygons') %>%
- #   as('owin')
-#plot(central_owin)
-```

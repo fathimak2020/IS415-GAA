@@ -23,9 +23,7 @@ install.packages("maptools", repos = "https://packagemanager.posit.co/cran/2023-
 pacman::p_load(maptools, sf, raster, spatstat, tmap, tidyverse)
 ```
 
-##Spatial Data Wrangling 
-
-
+##Spatial Data Wrangling
 
 ```{r}
 childcare_sf <- st_read("data/geospatial/ChildCareServices.geojson")%>%
@@ -33,6 +31,7 @@ childcare_sf <- st_read("data/geospatial/ChildCareServices.geojson")%>%
 mpsz_sf <- st_read(dsn= "data/geospatial",
                    layer = "MP14_SUBZONE_WEB_PL")
 ```
+
 ```{r}
 ```
 
@@ -48,9 +47,12 @@ plot(sg_sf)
 ```
 
 ## Importing the spatial
-## Mapping the geospaital 
+
+## Mapping the geospaital
+
 ## Geospatial Data wrangling
-## creating PPP object: sf method 
+
+## creating PPP object: sf method
 
 ```{r}
 childcare_ppp <- as.ppp(childcare_sf)
@@ -64,11 +66,13 @@ summary(childcare_ppp)
 ```{r}
 plot(childcare_ppp)
 ```
+
 ## Handling duplicated data
 
 ```{r}
 any(duplicated(childcare_ppp))
 ```
+
 ## Creating owin object
 
 ```{r}
@@ -83,6 +87,7 @@ childcareSG_ppp = childcare_ppp[sg_owin]
 summary(childcareSG_ppp)
 
 ```
+
 ```{r}
 pg <- mpsz_sf %>% filter(PLN_AREA_N == "PUNGGOL")
 tm <- mpsz_sf %>% filter(PLN_AREA_N == "TAMPINES")
@@ -98,8 +103,13 @@ plot (jw, main ="Jurong West")
 ```
 
 ## Combining point
+
 ## First-order spatal
+
 ## Kernel Density Estimation
+
 ## Computing kernel
+
 ## Rescaling KDE
-## working with different 
+
+## working with different
