@@ -22,7 +22,7 @@ Two data sets will be used in this hands-on exercise, they are:
 -   `Hunan county boundary layer`
 -   `Hunan_2012.csv`
 
-### 4.2.1 Getting Started 
+### 4.2.1 Getting Started
 
 Before we get started, we need to ensure that `spdep`, `sf`, `tmap` and `tidyverse` packages of R are currently installed in your R.
 
@@ -170,7 +170,7 @@ head(coords)
  plot(wm_r, coords, pch = 19, cex = 0.6, add = TRUE, col = "red")
 ```
 
-### 4.5.3.3 Plotting both Queen and Rook Contiguity Based Neighbours Maps 
+### 4.5.3.3 Plotting both Queen and Rook Contiguity Based Neighbours Maps
 
 ```{r}
 par(mfrow=c(1,2))
@@ -243,7 +243,7 @@ table(hunan$County, card(wm_d62))
 table(n_comp$comp.id)
 ```
 
-### 4.6.2.1 Plotting Fixed Distance Weight Matrix 
+### 4.6.2.1 Plotting Fixed Distance Weight Matrix
 
 Next, we will plot the distance weight matrix by using the code chunk below.
 
@@ -316,7 +316,7 @@ To see the weight of the first polygon’s eight neighbors type:
 rswm_q$weights[10]
 ```
 
-Each neighbor is assigned a 0.125 of the total weight. This means that when R computes the average neighboring income values, each neighbor’s income will be multiplied by 0.2 before being tallied.
+Each neighbor is assigned a 0.125 of the total weight. This means that when R computes the average neighboring income values, each neighbor’s income will be multiplied by 0.125 before being tallied.
 
 Using the same method, we can also derive a row standardised distance weight matrix by using the code chunk below.
 
@@ -385,7 +385,7 @@ lag_gdppc <- qtm(hunan, "lag GDPPC")
 tmap_arrange(gdppc, lag_gdppc, asp=1, ncol=2)
 ```
 
-### 4.8.2 Spatial Lag as a Sum of Neighboring Values 
+### 4.8.2 Spatial Lag as a Sum of Neighboring Values
 
 We can calculate spatial lag as a sum of neighboring values by assigning binary weights. We start by applying a function that will assign a value of 1 per each neighbor. This is done with `lapply`, which we have been using to manipulate the neighbors structure throughout the past notebooks.
 
@@ -488,7 +488,7 @@ w_avg_gdppc <- qtm(hunan, "lag_window_avg GDPPC")
 tmap_arrange(lag_gdppc, w_avg_gdppc, asp=1, ncol=2)
 ```
 
-### 4.8.4 Spatial Window Sum 
+### 4.8.4 Spatial Window Sum
 
 The spatial window sum is the counter part of the window average, but without using row-standardized weights.
 

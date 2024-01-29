@@ -17,6 +17,7 @@ pacman::p_load(sf, spNetwork, tmap, classInt, viridis, tidyverse)
 ```
 
 ##Data Import and Preparation
+
 ```{r}
 network <- st_read(dsn="data/geospatial", 
                    layer="Punggol_St")
@@ -63,15 +64,15 @@ densities <- nkde(network,
 ```
 
 ```{r}
-samples$density <- samples$density*1000
-lixels$density <- lixels$density*1000
+#samples$density <- samples$density*1000
+#lixels$density <- lixels$density*1000
 ```
 
 ```{r}
-tmap_mode('view')
-tm_shape(lixels)+
-  tm_lines(col="density ")+
-tm_shape(childcare)+
-  tm_dots()
-tmap_mode('plot')
+#tmap_mode('view')
+#tm_shape(lixels)+
+  #tm_lines(col="density ")+
+#tm_shape(childcare)+
+  #tm_dots()
+#tmap_mode('plot')
 ```
