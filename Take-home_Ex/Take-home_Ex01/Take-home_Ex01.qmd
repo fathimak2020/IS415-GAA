@@ -6,7 +6,7 @@ format:
     code-summary: "Show the code"
     #toc: false
 execute: 
-  eval: false
+  eval: true
   echo: true
   warning: false
 editor: visual
@@ -62,11 +62,11 @@ By this exercise, I will:
 
 The study will utilise the following datasets to explore spatial point patterns analysis methods and reveal the geographical and spatio-temporal distribution of Grab hailing services locations in Singapore.
 
-| Dataset Name                               | Type                | Source                                                              | Path                                                  |
-|-----------------|-----------------|----------------------|-----------------|
-| Grab-Posisi                                | Aspatial (.parquet) | <https://engineering.grab.com/grab-posisi>                          | data/aspatial/grabPosisi                              |
-| Master Plan 2019 Subzone Boundary (No Sea) | Geospatial (.shp)   | <https://beta.data.gov.sg/collections/2104/view>                    | data/geospatial/MasterPlan2019SubzoneBoundaryNoSeaKML |
-| Open Street Map Raod Data                  | Geospatial (.shp)   | <https://download.geofabrik.de/asia/malaysia-singapore-brunei.html> | data/geospatial/OSM/gis_osm_roads_free_1              |
+| Dataset Name                               | Type                | Source                                                              | Path                                     |
+|-----------------|-----------------|---------------------|-----------------|
+| Grab-Posisi                                | Aspatial (.parquet) | <https://engineering.grab.com/grab-posisi>                          | data/aspatial/grabPosisi                 |
+| Master Plan 2019 Subzone Boundary (No Sea) | Geospatial (.shp)   | <https://beta.data.gov.sg/collections/2104/view>                    | data/geospatial/MPSZ-2019                |
+| Open Street Map Raod Data                  | Geospatial (.shp)   | <https://download.geofabrik.de/asia/malaysia-singapore-brunei.html> | data/geospatial/OSM/gis_osm_roads_free_1 |
 
 ## **2.2 Importing Relevant R Packages**
 
@@ -91,12 +91,13 @@ The R packages used in this project are:
 -   `lubridate`: undefined
 
 -   `rgdal`
+- `RcolorBrewer`
 
 Pacman assists us by helping us load R packages that we require.
 
 ```{r}
-pacman::p_load(arrow, lubridate, tidyverse, tmap, sf, maptools, spatstat, raster, dplyr, rmapshaper)
-
+  pacman::p_load(arrow, lubridate, tidyverse, tmap, sf, maptools, spatstat, raster, dplyr, rmapshaper, RColorBrewer)
+#update.packages(ask = FALSE, dependencies = TRUE)
 ## install.packages("maptools", repos = "https://packagemanager.posit.co/cran/2023-10-13")
 ```
 
@@ -108,13 +109,14 @@ For the shapefile format, two arguments are required: `dsn` to define the data
 
 ```{r}
 mpsz_sf <- st_read(dsn = "data/geospatial", 
-                layer = "MPSZ-2019") %>% st_transform(crs = 3414)
+                layer = "MPSZ-2019") %>%
+    st_transform(crs = 3414)
 ```
 
 ::: callout-important
 **Project Transformation**
 
-Given that our dataset corresponds to the geographical boundaries of Singapore, it's essential to specify the appropriate CRS for accurate spatial analysis. To achieve this, the **`st_transform()`** function is used to convert the CRS of `mpsz_sf` to SVY21 (EPSG: 3414)
+Given that our dataset corresponds to the geographical boundaries of Singapore, it is necessary to specify the appropriate CRS for accurate spatial analysis. To achieve this, the **`st_transform()`** function is used to convert the CRS of `mpsz_sf` to SVY21 (EPSG: 3414)
 :::
 
 ## 2.3.2 Coastal Outline
@@ -131,8 +133,9 @@ plot(outline)
 As seen in the figure above, the coastal outline includes outer islands where Grab service is unavailable. Through the code chunk below, we shall use the `subset` function to select planning subzones from the `mpsz_sf` dataset to exclude. These rows of data are stored in new dataframes.
 
 ```{r}
-semakau <- subset(mpsz_sf,mpsz_sf$SUBZONE_N == "SEMAKAU")
-sudong <- subset(mpsz_sf, mpsz_sf$SUBZONE_N == "SUDONG")
+semakau <- subset(mpsz_sf,mpsz_sf$SUBZONE_N == "SEMAKAU") #western island
+sudong <- subset(mpsz_sf, mpsz_sf$SUBZONE_N == "SUDONG") #western island
+bukom <- subset(mpsz_sf, mpsz_sf$SUBZONE_N ==  "JURONG ISLAND AND BUKOM")
 north <- subset(mpsz_sf, mpsz_sf$SUBZONE_N == "NORTH-EASTERN ISLANDS")
 south <- subset(mpsz_sf, mpsz_sf$SUBZONE_N == "SOUTHERN GROUP")
 ```
@@ -140,7 +143,7 @@ south <- subset(mpsz_sf, mpsz_sf$SUBZONE_N == "SOUTHERN GROUP")
 We combine the newly created dataframes using the `bind_rows` function.
 
 ```{r}
-outerislands <- dplyr::bind_rows(list(semakau,sudong,north,south))
+outer <- dplyr::bind_rows(list(semakau,sudong,bukom,north,south))
 ```
 
 ## 2.3.2.2 Rendering a Coastal Boundary Excluding Outer Islands
@@ -148,7 +151,7 @@ outerislands <- dplyr::bind_rows(list(semakau,sudong,north,south))
 We use the st_union function to merge the geometries of `mpsz_sf` and `outerislands` and the `st_difference` function to eliminate the overlap.
 
 ```{r}
-sg_sf <- st_difference(st_union(mpsz_sf), st_union(outerislands))
+sg_sf <- st_difference(st_union(mpsz_sf), st_union(outer))
 plot(sg_sf)
 ```
 
@@ -159,7 +162,6 @@ plot(sg_sf)
 ## 2.3.3 Open Street Map Road Data
 
 ```{r}
-#| eval: false
 allroads = st_read(dsn = "data/geospatial/OSM", 
                          layer = "gis_osm_roads_free_1")  %>% st_transform(crs = 3414)
 ```
@@ -167,13 +169,12 @@ allroads = st_read(dsn = "data/geospatial/OSM",
 ::: callout-important
 **Project Transformation**
 
-Given that our dataset corresponds to the geographical boundaries of Singapore, it's essential to specify the appropriate CRS for accurate spatial analysis. To achieve this, the **`st_transform()`** function is used to convert the CRS of `allroads` to SVY21 (EPSG: 3414)
+Given that our dataset corresponds to the geographical boundaries of Singapore, it's necessary to specify the appropriate CRS for accurate spatial analysis. To achieve this, the **`st_transform()`** function is used to convert the CRS of `allroads` to SVY21 (EPSG: 3414)
 :::
 
 This dataset encompasses road networks spanning Singapore, Malaysia, and Brunei. To narrow our focus, we will extract roads exclusively within the Singapore boundary using the `st_intersection` function.
 
 ```{r}
-#| eval: false
 sg_roads_all <- st_intersection(allroads,sg_sf)
 ```
 
@@ -183,17 +184,29 @@ Next, we will examine the road network's road types.
 unique(sg_roads_all$fclass)
 ```
 
-Given our focus on Grab services, which primarily operate on motorways, we will extract the motorway type from the road network.
+Given our focus on Grab services, which primarily operate on roads excluding expressways, we will extract the relevant types from the road network. We can refer to OSM fclass to understand whichi roads are relevant here.
 
 ```{r}
-#sg_roads <- sg_roads_all %>%
- # filter(class == "motorway")
+sg_roads_filtered <- c("primary", "residential", "tertiary", "service", "secondary", "primary_link", "secondary_link", "tertiary_link")
+ 
 ```
 
-We will now visualise the motorway road type within the boundaries of Singapore.
+```{r}
+sg_roads <- sg_roads_all[sg_roads_all$fclass %in% sg_roads_filtered, ]
+
+unique(sg_roads$fclass)
+```
+
+We will now visualise the selected road types within the boundaries of Singapore.
 
 ```{r}
-tm_shape(sg_sf) +   tm_borders(lwd = 2, col = 'grey') +   tm_shape(sg_roads_all) +   tm_lines(col = 'brown4') +   tm_layout(frame = FALSE)
+road_type_palette <- brewer.pal(12, "Set3")
+tm_shape(sg_sf) + 
+  tm_borders(lwd = 2, col = 'grey') +
+  tm_shape(sg_roads) + 
+  tm_lines(col = "fclass", palette = road_type_palette)
+  tm_layout(frame = FALSE)
+
 ```
 
 ::: callout-tip
@@ -224,7 +237,6 @@ grab9 <- read_parquet("data/aspatial/GrabPosisi/part-00009.parquet", as_data_fra
 Then we join all into one dataframe.
 
 ```{r}
-#| eval: false
 grab <- bind_rows(grab0,grab1, grab2,grab3,grab4,grab5,grab6,grab7,grab8,grab9) 
 ```
 
@@ -237,7 +249,6 @@ The `head` function reveals that there are 9 columns in the dataframe.
 The field `pingtimestamp` is not in proper date-time format. It is stored as an `int` value. The following code chunk converts the data type of `pingtimestamp` from `int` to `date-time` format.
 
 ```{r}
-#| eval: false
 grab$pingtimestamp <- as_datetime(grab$pingtimestamp)
 ```
 
@@ -251,6 +262,11 @@ grab_sf <- st_as_sf(grab,
                        coords = c("rawlng", "rawlat"),
                        crs=4326) %>%
   st_transform(crs = 3414)
+```
+
+```{r}
+# write_rds(grab_sf, "data/rds/grab_sf.rds")
+grab_sf <- read_rds("data/rds/grab_sf.rds")
 ```
 
 ::: callout-important
@@ -290,9 +306,10 @@ We will extract trip starting point for all unqiue trajectories and store them t
         -   **`day`**: Day of the month when the trip commenced.
 
 ```{r}
+#| eval: false
 grab_origin <- grab_sf %>%
   group_by(trj_id) %>%
-  arrange (pingtimestamp) %>%
+  arrange(pingtimestamp) %>%
   filter(row_number()==1) %>% #after sorting by timestamp, first row gives origin location 
   mutate(weekday = wday(pingtimestamp, #define workday
                         label = TRUE,
@@ -302,11 +319,11 @@ grab_origin <- grab_sf %>%
 ```
 
 ```{r}
-#rds
+#write_rds(grab_origin, "data/rds/grab_origin.rds")
+grab_origin <- read_rds("data/rds/grab_origin.rds")
 ```
-
 ::: callout-tip
-✅ Task Complete! Grab taxi location points either by origins or destinations.
+✅ Task Complete! Grab taxi location points by origin points.
 :::
 
 ## 2.4.2.2 **Extracting Trip Ending Locations**
@@ -314,6 +331,7 @@ grab_origin <- grab_sf %>%
 We will extract trip ending point for all unique trajectories and store them to a new df named `grab_dest`. We employ a similar methodology to extracting a trips origin location. Except here, within each trajectory group, records are arranged in descending order based on the timestamp (**`pingtimestamp`**). By selecting the first row within each grouped trajectory (**`row_number() == 1`**), we identify the latest recorded location for each trip. This corresponds to the trip's ending point.
 
 ```{r}
+#| eval: false
 grab_dest <- grab_sf %>%
   group_by(trj_id) %>%
   arrange(desc(pingtimestamp)) %>% #function from dplyr
@@ -326,31 +344,30 @@ grab_dest <- grab_sf %>%
 ```
 
 ```{r}
-#rds  
+#write_rds(grab_dest, "data/rds/grab_dest.rds")
+grab_dest <- read_rds("data/rds/grab_dest.rds")
 ```
 
 ::: callout-tip
-✅ Task Complete! Grab taxi location points either by origins or destinations.
+✅ Task Complete! Grab taxi location points either by destination points.
 :::
 
-## Converting the Simple Features to Planar Point Pattern Object
+## Converting Simple Features to Planar Point Pattern Objects
 
-Firstly, we’ll need to convert the simple features data frames into Spatial\* classes if we can to do SPPA on it:
+Firstly, we’ll need to convert the simple features data frames into Spatial\* classes so we can to do spatial point pattern analysis on it:
 
 ```{r}
 grab_origin_ppp <- as.ppp(st_coordinates(grab_origin), st_bbox(grab_origin))
-par(mar = c(0,0,1,0))
 plot(grab_origin_ppp)
 ```
 
 ```{r}
 grab_dest_ppp <- as.ppp(st_coordinates(grab_dest), st_bbox(grab_dest))
-par(mar = c(0,0,1,0))
 plot(grab_dest_ppp)
 ```
 
 ::: callout-tip
-Note: It is not neccesary to change `sg_sf` into a ppp object as it will be converted to `owin` instead.
+Note: It is not neccessary to change `sg_sf` into a ppp object as it will be converted to `owin` instead.
 :::
 
 ## Check for duplicates and Handle Data Errors
@@ -360,21 +377,21 @@ summary(grab_origin_ppp)
 summary(grab_dest_ppp)
 ```
 
-Note: grab_origin_ppp objecs has no duplicated points, just to be sure, check again
+Note: grab_origin_ppp objects has no duplicated points, just to be sure, check again
 
 ```{r}
 any(duplicated(grab_origin_ppp)) 
 any(duplicated(grab_dest_ppp)) 
 ```
 
-##Introducing the owin object
+## Introducing the owin object
 
 Usually, when analysing spatial point patterns, we’ll confine our analysis within a certain geographical area - such as the Singapore boundary. In spatstat, an object called owin is specially designed to represent this polygonal region.
 
-##Creating owin object
+## Creating owin object
 
 ```{r}
-sg_owin <- as(sg_sf, "owin")
+sg_owin <- as.owin(sg_sf)
 plot(sg_owin)
 ```
 
@@ -392,18 +409,28 @@ grab_dest_ppp_sg <- grab_dest_ppp[sg_owin]
 plot(grab_dest_ppp_sg)
 ```
 
-## Exploratoty Spatial Data Analysis
+## Exploratoty Data Analysis
 
-`grab_original_ppp_sg` and `grab_dest_ppp_sg` is in metres. For futher analysis, we are required to rescale our data to kilometers, we can do so using `rescale()`
+##Point Symbol Maps
+
+## **First-Order Spatial Point Patterns Analysis**
+
+##Rescale `grab_original_ppp_sg` and `grab_dest_ppp_sg`
+
+`grab_original_ppp_sg` and `grab_dest_ppp_sg` is in metres. For futher analysis, we are required to rescale our data to kilometers, we can do so using `rescale().`
 
 ```{r}
 grab_origin_ppp_sg_km <- rescale(grab_origin_ppp_sg, 1000, 'km')
 grab_dest_ppp_sg_km <- rescale(grab_dest_ppp_sg, 1000, 'km')
 ```
 
-##First-Order Spatial Point Patterns Analysis
+## Kernel Density Estimation
+
+## Automatic bandwidth method
 
 Computing kernel density estimation using automatic bandwidth selection method
+
+-   [`bw.diggle()`](https://search.r-project.org/CRAN/refmans/spatstat.explore/html/bw.diggle.html) Cross Validated Bandwidth Selection for Kernel Density
 
 ```{r}
 kde_grab_origin_sg_bw <- density(grab_origin_ppp_sg_km,
@@ -413,7 +440,7 @@ kde_grab_origin_sg_bw <- density(grab_origin_ppp_sg_km,
 ```
 
 ```{r}
-plot(kde_grab_origin_sg_bw,main = "Default Density KDE for Origin Points")
+plot(kde_grab_origin_sg_bw,main = "Automatic KDE for Origin Points")
 ```
 
 ```{r}
@@ -424,42 +451,159 @@ kde_grab_dest_sg_bw <- density(grab_dest_ppp_sg_km,
 ```
 
 ```{r}
-plot(kde_grab_dest_sg_bw,main = "Default Density KDE for Destination Points")
+plot(kde_grab_dest_sg_bw,main = "Automatic KDE for Destination Points")
 ```
+
+## Other spatstat functions for bandwidth
+
+-   [`bw.CvL()`](https://search.r-project.org/CRAN/refmans/spatstat.explore/html/bw.CvL.adaptive.html) Cronie and van Lieshout’s Criterion for Bandwidth Selection for Kernel Density
+
+-   [`bw.scott()`](https://www.rdocumentation.org/packages/spatstat/versions/1.64-1/topics/bw.scott) Scott’s Rule for Bandwidth Selection for Kernel Density
+
+-   [`bw.ppl()`](https://search.r-project.org/CRAN/refmans/spatstat.explore/html/bw.pplHeat.html) Likelihood Cross Validation Bandwidth Selection for Kernel Density
+
+```{r}
+bw_CvL <- bw.CvL(grab_origin_ppp_sg_km)
+bw_CvL
+```
+
+```{r}
+bw_scott <- bw.scott(grab_origin_ppp_sg_km, isotropic=TRUE) #{r}to return single bandwidth as scott provides 2 different bandwidths for each coordinate
+bw_scott
+```
+
+```{r}
+bw_ppl <- bw.ppl(grab_origin_ppp_sg_km)
+bw_ppl
+```
+
+```{r}
+bw_diggle <- bw.diggle(grab_origin_ppp_sg_km)
+bw_diggle
+```
+
+Comparing the output of each method methods
+
+```{r}
+kde_diggle <- density(grab_origin_ppp_sg_km, bw_diggle)
+kde_CvL <- density(grab_origin_ppp_sg_km, bw_CvL)
+kde_scott <- density(grab_origin_ppp_sg_km, bw_scott)
+kde_ppl <- density(grab_origin_ppp_sg_km, bw_ppl)
+
+par(mfrow = c(2,2))
+plot(kde_diggle,main = "kde_diggle")
+plot(kde_CvL,main = "kde_CvL")
+plot(kde_scott,main = "kde_scott")
+plot(kde_ppl,main = "kde_ppl")
+```
+
+```{r}
+par(mfrow = c(2,2))
+hist(kde_diggle,main = "kde_diggle")
+hist(kde_CvL,main = "kde_CvL")
+hist(kde_scott,main = "kde_scott")
+hist(kde_ppl,main = "kde_ppl")
+```
+
+## Choosing the most appropriate KDE Selection Method
+
+we choose scott method not much skewness from histogram
+
+## Fixed Bandwidth Selection
+
+```{r}
+fixed_bw_scott <- bw.scott(grab_origin_ppp_sg_km)
+fixed_bw_scott
+```
+
+The values returned are \_\_\_ and \_\_
+
+The we plot to visualised the fixed bandwdht using scott method
+
+```{r}
+kde_fixed_bw_scott <- density(grab_origin_ppp_sg_km, fixed_bw_scott)
+plot(kde_fixed_bw_scott)
+```
+
+## Different Kernel Function Selection Methods for Fixed Bandwidth
+
+The default kernel in `density.ppp()` is the `gaussian`. But there are other options such as `epanechnikov`, `quartic` or `disc.`
+
+```{r}
+kde_fixed_bw_scott.gaussian <- density(grab_origin_ppp_sg_km, 
+                          sigma=fixed_bw_scott, 
+                          edge=TRUE, 
+                          kernel="gaussian")
+
+
+kde_fixed_bw_scott.epanechnikov <- density(grab_origin_ppp_sg_km, 
+                          sigma=fixed_bw_scott, 
+                          edge=TRUE, 
+                          kernel="epanechnikov")
+   
+kde_fixed_bw_scott.quartic <- density(grab_origin_ppp_sg_km, 
+                          sigma=fixed_bw_scott, 
+                          edge=TRUE, 
+                          kernel="quartic")
+       
+   
+kde_fixed_scott.disc <- density(grab_origin_ppp_sg_km, 
+                          sigma=fixed_bw_scott, 
+                          edge=TRUE, 
+                          kernel="disc")
+         
+par(mfrow = c(2,2))
+plot(kde_fixed_bw_scott.gaussian, main="Gaussian")
+plot(kde_fixed_bw_scott.epanechnikov, main="Epanechnikov")
+plot(kde_fixed_bw_scott.quartic, main="Quartic")
+plot(kde_fixed_scott.disc, main="Disc")
+```
+
+## 
+
+## KDE Layers with Spatially Adaptive Bandwidth
+
+```{r}
+kde_adaptive <- adaptive.density(grab_origin_ppp_sg_km, method="kernel")
+```
+
+# Comparing Fixed Bandwidth and Adaptive
+
+```{r}
+par(mfrow=c(1,2))
+plot(kde_fixed_bw_scott.gaussian, main = "Fixed bandwidth")
+plot(kde_adaptive, main = "Adaptive bandwidth")
+```
+
+## Interactive KDE Maps
 
 ## Converting KDE output into grid object into RasterLayer object
 
-```{r}
-kde_grab_origin_sg_bw_raster <- kde_grab_origin_sg_bw %>% 
-  as.SpatialGridDataFrame.im() %>% 
-  raster()
+We need to convert our KDE output into Grid objects for mapping purposes
 
-kde_grab_dest_sg_bw_raster <- kde_grab_dest_sg_bw %>% 
-  as.SpatialGridDataFrame.im() %>% 
-  raster()
+```{r}
+kde_fixed_bw_scott_raster <- raster(kde_fixed_bw_scott)
+kde_adaptive_kernel_raster <- raster(kde_adaptive)
 ```
 
-Let's check the properties of our ratser layers
+Let's perform project transformation
 
 ```{r}
-kde_grab_origin_sg_bw_raster
-```
-
-There is no CRS assigned so we shall do so in the next step.
-
-```{r}
-projection(kde_grab_origin_sg_bw_raster) <- CRS("+init=EPSG:3414 +datum=WGS84 +units=km")
-projection(kde_grab_dest_sg_bw_raster) <- CRS("+init=EPSG:3414 +datum=WGS84 +units=km")
+projection(kde_fixed_bw_scott_raster) <- CRS("+init=EPSG:3414 +units=km")
+projection(kde_adaptive_kernel_raster) <- CRS("+init=EPSG:3414 +units=km")
 ```
 
 ## Kernel Density Maps on OpenStreetMap
 
-Making a Density Map function
+Lets visualise our Kernel Density Maps on OpenStreetMap
+
+First we create a mapping function
 
 ```{r}
 density_map <- function(raster_object, map_title) {
   tm_basemap("OpenStreetMap") +
-tm_shape(raster_object) +
+tm_shape(mpsz_sf) +
+    #or mpsz_sf
   tm_raster("v", alpha=0.65) + 
   tm_layout(legend.position = c("right", "bottom"), 
             legend.height = 0.5, 
@@ -474,8 +618,119 @@ tm_shape(raster_object) +
 Plotting Density Map
 
 ```{r}
-grab_origin_density_map <- density_map(kde_grab_origin_sg_bw_raster, map_title = "Grab Origin Point Density Map")
-grab_dest_density_map <- density_map(kde_grab_dest_sg_bw_raster, map_title = "Grab Destination Point Density Map")
+kde_fixed_bw_scott_map <- density_map(kde_fixed_bw_scott_raster, map_title = "Grab Origin KDE Fixed Bandwidth (Scott Method)")
+kde_adaptive_kernel_map <- density_map(kde_adaptive_kernel_raster, map_title = "Grab Origin KDE Adaptive Bandwidth")
+```
+
+```{r}
+tmap_mode('view')
+kde_fixed_bw_scott_map <- tm_basemap("OpenStreetMap") +
+  tm_shape(kde_fixed_bw_scott_raster) +
+  tm_raster(alpha = 0.65, title = "KDE_Fixed_Scott", palette = brewer.pal(12, "Set3")) +
+  tm_layout(title = "Grab Origin KDE Fixed Bandwidth (Scott Method)")
+tmap_leaflet(kde_fixed_bw_scott_map)
+
+```
+
+```{r}
+tmap_mode('view')
+kde_adaptive_kernel_map <- tm_basemap("OpenStreetMap") +
+  tm_shape(kde_adaptive_kernel_raster) +
+  tm_raster(alpha = 0.65, title = "KDE_Adaptive_Kernel", palette = brewer.pal(12, "Set3")) +
+  tm_layout(title = "Grab Origin KDE Adaptive Bandwidth")
+tmap_leaflet(kde_adaptive_kernel_map)
+
 ```
 
 ## Kernel Density Map Analysis
+
+## **Comparing Spatial Point Patterns using KDE**
+
+## Extract Planning Areas
+
+```{r}
+je = mpsz_sf%>%filter(PLN_AREA_N == "JURONG EAST")
+tm = mpsz_sf%>%filter(PLN_AREA_N == "TAMPINES")
+ck = mpsz_sf%>%filter(PLN_AREA_N == "CHOA CHU KANG")
+jw = mpsz_sf%>%filter(PLN_AREA_N == "JURONG WEST")
+```
+
+## Plotting target planning areas
+
+```{r}
+par(mfrow=c(2,2))
+plot(st_geometry(je), main = "Jurong East")
+plot(st_geometry(tm), main = "Tampines")
+plot(st_geometry(ck), main = "Choa Chu Kang")
+plot(st_geometry(jw), main = "Jurong West")
+```
+
+```{r}
+je_owin = as.owin(je)
+tm_owin = as.owin(tm)
+ck_owin = as.owin(ck)
+jw_owin = as.owin(jw)
+
+origin_je_ppp = grab_origin_ppp_sg[je_owin]
+origin_tm_ppp = grab_origin_ppp_sg[tm_owin]
+origin_ck_ppp = grab_origin_ppp_sg[ck_owin]
+origin_jw_ppp = grab_origin_ppp_sg[jw_owin]
+```
+
+```{r}
+je_kde_scott <- density(origin_je_ppp, sigma=bw.scott, main="Jurong East")
+tm_kde_scott <- density(origin_tm_ppp, sigma=bw.scott, main="Tampines")
+ck_kde_scott <- density(origin_ck_ppp, sigma=bw.scott, main="Choa Chu Kang")
+jw_kde_scott <- density(origin_jw_ppp, sigma=bw.scott, main="Jurong West")
+
+
+par(mfrow = c(3,2))
+plot(je_kde_scott,main = "KDE Jurong East")
+plot(tm_kde_scott,main = "KDE Tampines")
+plot(ck_kde_scott,main = "KDE Choa Chu Kang")
+plot(jw_kde_scott,main = "Jurong West")
+
+
+```
+
+## Nearest Neighbour Analysis
+
+## Clark-Evans test of aggregation
+
+## Origin Points
+
+The test hypotheses are:
+
+-   H~0~ = The distribution of origin points are randomly distributed
+
+-   H~1~= The distribution of origin points are not randomly distributed
+
+The 95% confident interval will be used.
+
+```{r}
+clarkevans.test(grab_origin_ppp_sg,
+                correction="none",
+                clipregion="sg_owin",
+                alternative=c("clustered"),
+                nsim=99)
+```
+
+## Destination Points
+
+The test hypotheses are:
+
+-   H~0~ = The distribution of destination points are randomly distributed
+
+-   H~1~= The distribution of destination points are not randomly distributed
+
+The 95% confidence interval will be used.
+
+```{r}
+clarkevans.test(grab_dest_ppp_sg,
+                correction="none",
+                clipregion="sg_owin",
+                alternative=c("clustered"),
+                nsim=99)
+```
+
+## **Network Constrained Kernel Density Estimation (NKDE)**
