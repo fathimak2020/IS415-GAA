@@ -2,7 +2,7 @@
 title: "Take-home Exercise 1: Application of Spatial Point Patterns Analysis to Discover the Geographical Distribution of Grab Hailing Services in Singapore"
 execute: 
   warning: false
-  eval: false
+  
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 ---
 
@@ -620,7 +620,7 @@ plot(kde_grab_dest_sg_bw,main = "KDE Automatic Bandwidth for Destination Points"
 
 ### 4.2.1.1 Other Bandwidth Selection Methods
 
-Additionally we can choose from a series of options for 'kernel' which is the smoothing parameter that we will explore later. Lets explore the other methods for automatic bandwidth selection and retrieve sigma value. The sigma value tells us the amount of smoothing applied when estimating the kernel density.
+Additionally we can choose from a series of options for 'kernel' which is the smoothing parameter that we will explore later. Let's explore the other methods for automatic bandwidth selection and retrieve sigma value. The sigma value tells us the amount of smoothing applied when estimating the kernel density.
 
 -   [`bw.diggle()`](https://search.r-project.org/CRAN/refmans/spatstat.explore/html/bw.diggle.html) Cross Validated Bandwidth Selection for Kernel Density
 
@@ -774,7 +774,7 @@ plot(kde_adaptive, main = "Adaptive bandwidth")
 
 ### 4.2.5 Interactive KDE Maps
 
-Now lets plot interactive KDE maps to have a closer look.
+Now let's plot interactive KDE maps to have a closer look.
 
 ### 4.2.5.1 Converting KDE Output into Grid Object into RasterLayer Object
 
