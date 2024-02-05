@@ -1,0 +1,661 @@
+---
+title: "Take-home Exercise 1a [DATA PREPARATION]: Application of Spatial Point Patterns Analysis to Discover the Geographical Distribution of Grab Hailing Services in Singapore"
+execute: 
+  warning: false
+  freeze: true
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+---
+
+## 1 Overview
+
+## 1.1 Setting the scene
+
+Understanding how people move around in a city is like figuring out its heartbeat—it shows us the rhythms that shape our urban lives. Thanks to smartphones and technology, we now have a bunch of data about how people move. When we use smart analysis tools like GIS, we can unlock valuable insights that help us plan cities better.
+
+In 2020, GRAB shared a set of data called Grab Posisi, all about how people move around in Singapore. This kind of information isn't just interesting; it's super helpful for businesses, people who make decisions about the city, and those who plan how cities work. It's like having a dynamic picture of how people move, helping us create cities that work well for everyone.
+
+## 1.2 Objectives
+
+The objectives of this take-home exercise are to:
+
+-   Apply geospatial analytics to address societal challenges
+
+-   Use spatial point patterns analysis methods to explore Grab hailing services distribution in Singapore
+
+-   Organise geospatial data into sf tibble data.frames using `sf` and `tidyverse` functions
+
+-   Focus on Grab taxi location points, road layer within Singapore, and Singapore coastal boundary layer
+
+-   Generate traditional Kernel Density Estimation layers
+
+-   Create Network Kernel Density Estimation (NKDE)
+
+-   Utilise `tmap` functions to display kernel density layers on OSM
+
+-   Describe spatial patterns revealed by the kernel density maps
+
+By this exercise, I will:
+
+-   Enhance my understanding of geospatial analytics applications
+
+-   Develop proficiency in spatial point patterns analysis
+
+-   Gain hands-on experience in dealing with geospatial data
+
+-   Explore Grab hailing services distribution patterns in Singapore
+
+-   Generate and interpret Kernel Density Estimation layers
+
+-   Understand the nuances of Network Kernel Density Estimation (NKDE)
+
+-   Learn about the visualisation of spatial patterns using `tmap` functions on OSM
+
+## 2 Getting Started
+
+## 2.1 Data Acquisition
+
+The study will utilise the following datasets to explore spatial point patterns analysis methods and reveal the geographical and spatio-temporal distribution of Grab hailing services locations in Singapore.
+
+| Dataset Name                               | Type                | Source                                                              | Path                                     |
+|----------------|----------------|-------------------------|----------------|
+| Grab-Posisi                                | Aspatial (.parquet) | <https://engineering.grab.com/grab-posisi>                          | data/aspatial/grabPosisi                 |
+| Master Plan 2019 Subzone Boundary (No Sea) | Geospatial (.shp)   | <https://beta.data.gov.sg/collections/2104/view>                    | data/geospatial/MPSZ-2019                |
+| Open Street Map Road Data                  | Geospatial (.shp)   | <https://download.geofabrik.de/asia/malaysia-singapore-brunei.html> | data/geospatial/OSM/gis_osm_roads_free_1 |
+
+## **2.2 Importing Relevant R Packages**
+
+The R packages used in this project are:
+
+1.  `arrow`: for reading and writing Parquet files
+
+2.  `dplyr`: for data manipulation
+
+3.  `lubridate`: for working with date-time data
+
+4.  `maptools`: set of tools for reading and manipulating spatial data formats, such as shapefiles
+
+5.  `raster`: reads, writes, manipulates, analyses, and models gridded spatial data
+
+6.  `rgdal`: from CRAN, enables users to import, export, and manipulate spatial data within the R environment
+
+7.  `RcolorBrewer`: package providing color schemes for maps and other visualizations
+
+8.  `rmapshaper`: a package for simplifying and modifying geographic shapes in R
+
+9.  `sf`: for importing, managing, and processing geospatial data
+
+10. `spNetwork`: to perform spatial analysis for NKDE
+
+11. `spatstat`: for performing spatial point patterns analysis
+
+12. `tidyverse`: a family of other R packages for performing data science tasks such as importing, wrangling, and visualizing data
+
+13. `tmap`: creating static and interactive maps
+
+14. `ggplot2`: used for data visualization
+
+15. `plotly`: interactive graphing library for R
+
+Pacman assists us by helping us load R packages that we require.
+
+```{r}
+ pacman::p_load(arrow, dplyr, lubridate, maptools, raster, rgdal, RColorBrewer, rmapshaper, sf, sp, spNetwork, spatstat, tidyverse, tmap, ggplot2, plotly)
+
+#update.packages(ask = FALSE, dependencies = TRUE)
+## install.packages("maptools", repos = "https://packagemanager.posit.co/cran/2023-10-13")
+```
+
+## 2.3 Importing Geospatial Datasets
+
+### 2.3.1 Master Plan 2019 Subzone Boundary (No Sea)
+
+For shapefile format, two arguments are required: `dsn` to define the data path, and `layer` to provide the shapefile name. 
+
+```{r}
+mpsz_sf <- st_read(dsn = "data/geospatial", 
+                layer = "MPSZ-2019") %>%
+    st_transform(crs = 3414)
+```
+
+::: callout-important
+**Project Transformation**
+
+Given that our dataset corresponds to the geographical boundaries of Singapore, it is necessary to specify the appropriate CRS for accurate spatial analysis. To achieve this, the **`st_transform()`** function is used to convert the CRS of `mpsz_sf` to SVY21 (EPSG: 3414)
+:::
+
+### 2.3.2 Coastal Outline
+
+In order to create a costal outline of singapore, we will use the `st_union` function to consolidate all subzone boundaries from `mpsz_sf` into a single polygon.
+
+```{r}
+outline = mpsz_sf %>% st_union()
+plot(outline)
+```
+
+### 2.3.2.1 Extracting Outer Islands
+
+As seen in the figure above, the coastal outline includes outer islands where Grab service is unavailable. Through the code chunk below, we use the `subset` function to select subzones from the `mpsz_sf` dataset to exclude. These excluded rows of data are stored in new dataframes.
+
+```{r}
+semakau <- subset(mpsz_sf,mpsz_sf$SUBZONE_N == "SEMAKAU") #western island
+sudong <- subset(mpsz_sf, mpsz_sf$SUBZONE_N == "SUDONG") #western island
+bukom <- subset(mpsz_sf, mpsz_sf$SUBZONE_N ==  "JURONG ISLAND AND BUKOM")
+north <- subset(mpsz_sf, mpsz_sf$SUBZONE_N == "NORTH-EASTERN ISLANDS")
+south <- subset(mpsz_sf, mpsz_sf$SUBZONE_N == "SOUTHERN GROUP")
+```
+
+We combine the newly created dataframes using the `bind_rows` function and store the data in another dataframe called `outer`.
+
+```{r}
+outer <- dplyr::bind_rows(list(semakau,sudong,bukom,north,south))
+```
+
+### 2.3.2.2 Rendering a Coastal Boundary Excluding Outer Islands
+
+We use the `st_union` function again to merge the geometries of `mpsz_sf` and `outer`, and the `st_difference` function to eliminate the overlap between the two layers. This results in a coastal boundary, `sg_sf`, which excludes the outer islands.
+
+```{r}
+#| eval: false
+sg_sf <- st_difference(st_union(mpsz_sf), st_union(outer))
+```
+
+::: callout-tip
+✅ Task Complete! We have obtained the coastal boundary layer of Singapore, excluding the outer islands.
+:::
+
+```{r}
+#write_rds(sg_sf, "data/rds/sg_sf.rds")
+sg_sf <- read_rds("data/rds/sg_sf.rds")
+plot(sg_sf)
+```
+
+::: callout-tip
+We'll save the output in .rds file format to save loading time.
+:::
+
+### 2.3.3 Open Street Map Road Data
+
+Let's import the road data obtained from OSM.
+
+```{r}
+allroads = st_read(dsn = "data/geospatial/OSM", 
+                         layer = "gis_osm_roads_free_1")  %>% st_transform(crs = 3414)
+```
+
+::: callout-important
+**Project Transformation**
+
+Given that our dataset corresponds to the geographical boundaries of Singapore, it's necessary to specify the appropriate CRS for accurate spatial analysis. To achieve this, the **`st_transform()`** function is used to convert the CRS of `allroads` to SVY21 (EPSG: 3414)
+:::
+
+This dataset encompasses road networks spanning Singapore, Malaysia, and Brunei. To narrow our focus, we will extract roads exclusively within the Singapore boundary using the `st_intersection` function to check the intersection between `sg_sf` and `allroads`.
+
+```{r}
+#| eval: false
+sg_roads_all <- st_intersection(allroads,sg_sf)
+```
+
+```{r}
+#write_rds(sg_roads_all, "data/rds/sg_roads_all.rds")
+sg_roads_all <- read_rds("data/rds/sg_roads_all.rds")
+```
+
+::: callout-tip
+We'll save the output in .rds file format to save loading time.
+:::
+
+The next step involves examining the various road types within the road network.
+
+```{r}
+unique(sg_roads_all$fclass)
+```
+
+Given our focus on Grab services, which primarily operate on roads excluding expressways (it is not possible for Grab to pick-up or drop off passengers along expressways), we will extract the relevant road types from the road network. To determine which roads are applicable, we can look at the OSM fclass. The image below provides descriptions for each road type, and for our analysis, we will focus on the most relevant types: primary, residential, tertiary, service, secondary, primary_link, secondary_link, and tertiary_link
+
+![](images/Screenshot%202024-02-01%20122342.png){width="425"}
+
+We store the selected road types in a dataframe called `sg_roads_filtered`.
+
+```{r}
+sg_roads_filtered <- c("primary", "residential", "tertiary", "service", "secondary", "primary_link", "secondary_link", "tertiary_link")
+ 
+```
+
+```{r}
+sg_roads <- sg_roads_all[sg_roads_all$fclass %in% sg_roads_filtered, ]
+
+unique(sg_roads$fclass)
+```
+
+```{r}
+write_rds(sg_roads, "data/rds/sg_roads.rds")
+#sg_roads <- read_rds("data/rds/sg_roads.rds")
+```
+
+::: callout-tip
+We'll save the output in .rds file format to save loading time.
+:::
+
+We will now visualise the selected road types within the boundaries of Singapore using `tmap`.
+
+```{r}
+road_type_palette <- brewer.pal(12, "Set3")
+tmap_mode('plot')
+tm_shape(sg_sf) + 
+  tm_borders(lwd = 2, col = 'grey') +
+  tm_shape(sg_roads) + 
+  tm_lines(col = "fclass", palette = road_type_palette)
+  tm_layout(frame = FALSE, main.title = "Types of Road Networks in Singapore")
+```
+
+::: callout-tip
+✅ Task Complete! We have extracted the road layer within Singapore.
+:::
+
+## 2.4 Importing Aspatial Datasets
+
+### 2.4.1 Grab-Posisi
+
+Grab-Posisi, is a GPS trajectory dataset. Each trajectory is serialised in a file in Apache Parquet format.
+
+We will use the `read_parquet` function from the `arrow` package, to read Parquet files.
+
+```{r}
+grab0 <- read_parquet("data/aspatial/GrabPosisi/part-00000.parquet", as_data_frame = TRUE)
+grab1 <- read_parquet("data/aspatial/GrabPosisi/part-00001.parquet", as_data_frame = TRUE)
+grab2 <- read_parquet("data/aspatial/GrabPosisi/part-00002.parquet", as_data_frame = TRUE)
+grab3 <- read_parquet("data/aspatial/GrabPosisi/part-00003.parquet", as_data_frame = TRUE)
+grab4 <- read_parquet("data/aspatial/GrabPosisi/part-00004.parquet", as_data_frame = TRUE)
+grab5 <- read_parquet("data/aspatial/GrabPosisi/part-00005.parquet", as_data_frame = TRUE)
+grab6 <- read_parquet("data/aspatial/GrabPosisi/part-00006.parquet", as_data_frame = TRUE)
+grab7 <- read_parquet("data/aspatial/GrabPosisi/part-00007.parquet", as_data_frame = TRUE)
+grab8 <- read_parquet("data/aspatial/GrabPosisi/part-00008.parquet", as_data_frame = TRUE)
+grab9 <- read_parquet("data/aspatial/GrabPosisi/part-00009.parquet", as_data_frame = TRUE)
+```
+
+Then we join all the read files into one dataframe.
+
+```{r}
+grab <- bind_rows(grab0,grab1, grab2,grab3,grab4,grab5,grab6,grab7,grab8,grab9) 
+```
+
+```{r}
+head(grab)
+```
+
+The `head` function reveals that there are 9 columns in the dataframe.
+
+The field `pingtimestamp` is not in proper date-time format. It is stored as an `int` value. The following code chunk converts the data type of `pingtimestamp` from `int` to `date-time` format.
+
+```{r}
+grab$pingtimestamp <- as_datetime(grab$pingtimestamp)
+```
+
+### 2.4.1.2 Converting Aspatial Data Frame into a Simple Feature Data Frame
+
+We will proceed to convert the `grab` dataset, currently in an aspatial data frame, into an sf tibble dataframe.
+
+```{r}
+#| eval: false
+grab_sf <- st_as_sf(grab, 
+                       coords = c("rawlng", "rawlat"),
+                       crs=4326) %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+# write_rds(grab_sf, "data/rds/grab_sf.rds")
+grab_sf <- read_rds("data/rds/grab_sf.rds")
+```
+
+::: callout-tip
+We'll save the output in .rds file format to save loading time.
+:::
+
+::: callout-important
+**Project Transformation**
+
+Assuming the dataset is initially in the WGS84 Geographic Coordinate System, as indicated by the latitude/longitude fields, we need to define the suitable CRS for spatial analysis within Singapore. The `st_transform()` function is utilised to convert the CRS of the `grab` dataset to SVY21 (EPSG: 3414).
+:::
+
+This gives us the new simple feature data frame, `grab_sf`
+
+## 2.5 Data Wrangling
+
+### 2.5.1 **Extracting Grab Trips Starting Locations**
+
+We will extract trip starting point for all unqiue trajectories and store them to a new df named `grab_origin`. To isolate the origin locations, we use the following methodology:
+
+1.  **Grouping by Trajectory ID:**
+
+    -   The dataset is grouped by the unique trajectory identifier (**`trj_id`**).
+
+2.  **Arranging by Timestamp:**
+
+    -   Within each trajectory group, records are arranged in ascending order based on the timestamp (**`pingtimestamp`**).
+
+3.  **Filtering for the First Row:**
+
+    -   By selecting the first row within each grouped trajectory (**`row_number() == 1`**), we identify the earliest recorded location for each trip. This is indicative of the trip's starting point.
+
+4.  **Adding Temporal Information:**
+
+    -   Additional temporal context is provided by introducing new columns:
+
+        -   **`weekday`**: Day of the week based on the timestamp
+
+        -   **`start_hr`**: Starting hour of the trip
+
+        -   **`day`**: Day of the month when the trip started
+
+```{r}
+#| eval: false
+grab_origin <- grab_sf %>%
+  group_by(trj_id) %>%
+  arrange(pingtimestamp) %>%
+  filter(row_number()==1) %>% #after sorting by timestamp, first row gives origin location 
+  mutate(weekday = wday(pingtimestamp, #define workday
+                        label = TRUE,
+                        abbr = TRUE), #Monday = MON 
+        start_hr = factor(hour(pingtimestamp)),
+        day = factor(mday(pingtimestamp))) #to change to ordinal scale
+```
+
+```{r}
+#write_rds(grab_origin, "data/rds/grab_origin.rds")
+grab_origin <- read_rds("data/rds/grab_origin.rds")
+```
+
+::: callout-tip
+We'll save the output in .rds file format to save loading time.
+:::
+
+::: callout-tip
+✅ Task Complete! We have retrieved the origin location coordinates for Grab services.
+:::
+
+### 2.5.2 **Extracting Grab Trips Ending Locations**
+
+We will extract trip ending point for all unique trajectories and store them to a new df named `grab_dest`. We employ a similar methodology to extracting a trips origin location. Except here, within each trajectory group, records are arranged in descending order based on the timestamp (**`pingtimestamp`**). By selecting the first row within each grouped trajectory (**`row_number() == 1`**), we identify the latest recorded location for each trip. This corresponds to the trip's ending point.
+
+```{r}
+#| eval: false
+grab_dest <- grab_sf %>%
+  group_by(trj_id) %>%
+  arrange(desc(pingtimestamp)) %>% #function from dplyr
+  filter(row_number()==1) %>% #first row after arranging in desc order gives dest  
+  mutate(weekday = wday(pingtimestamp, #define workday
+                        label = TRUE,
+                        abbr = TRUE), #Monday = MON 
+        end_hr = factor(hour(pingtimestamp)),
+        day = factor(mday(pingtimestamp))) #to change to ordinal scale
+```
+
+```{r}
+#write_rds(grab_dest, "data/rds/grab_dest.rds")
+grab_dest <- read_rds("data/rds/grab_dest.rds")
+```
+
+::: callout-tip
+We'll save the output in .rds file format to save loading time.
+:::
+
+::: callout-tip
+✅ Task Complete! We have retrieved the destination location coordinates for Grab services.
+:::
+
+### 2.5.3 Converting Simple Features to Planar Point Pattern Objects
+
+To perform spatial point pattern analysis, firstly, we’ll need to convert the simple features objects (grab_orign and grab_dest) into Spatial\* classes. For this we use `as.ppp` from spatstat package. The `st_coordinates` function extracts the coordiates from our sf objects and `st_bbox` will extract the minimum and maximum coordinates of the object along each axis.
+
+```{r}
+grab_origin_ppp <- as.ppp(st_coordinates(grab_origin), st_bbox(grab_origin))
+
+par(mar = c(1,1,1,1))
+plot(grab_origin_ppp, main = "Grab Origin Points as PPP Objects")
+```
+
+```{r}
+grab_dest_ppp <- as.ppp(st_coordinates(grab_dest), st_bbox(grab_dest))
+
+par(mar = c(1,1,1,1))
+plot(grab_dest_ppp, main = "Grab Destination Points as PPP Objects")
+```
+
+::: callout-tip
+It is not neccessary to change `sg_sf` into a ppp object as it will be converted to `owin` instead.
+:::
+
+### 2.5.4 Check for Duplicates and Handle Data Errors
+
+Let's have a look at the `ppp` objects we have created to make sure that there is no duplicates or errors in our data.
+
+```{r}
+summary(grab_origin_ppp)
+summary(grab_dest_ppp)
+```
+
+::: callout-note
+`grab_origin_ppp` and `grab_dest_ppp` objects have no duplicated points, but just to be sure, we check again using the `any(duplicated()` function.
+:::
+
+```{r}
+any(duplicated(grab_origin_ppp)) 
+any(duplicated(grab_dest_ppp)) 
+```
+
+The output is false for both objects so we move on to the next step.
+
+### 2.5.5 Introducing OWIN
+
+When analysing spatial point patterns, we’ll confine our analysis within a certain geographical area - such as the Singapore boundary. In spatstat, an object called `owin` is specially designed to represent this polygonal region.
+
+### 2.5.5.1 Creating OWIN Object
+
+To create a two dimensional observation window using `sg_sf` coastal boundary we created earlier, we use the `as.owin` function.
+
+```{r}
+#| eval: false
+sg_owin <- as.owin(sg_sf)
+```
+
+```{r}
+#write_rds(sg_owin, "data/rds/sg_owin")
+sg_owin <- read_rds("data/rds/sg_owin")
+plot(sg_owin)
+```
+
+::: callout-tip
+We'll save the output in .rds file format to save loading time.
+:::
+
+### 2.5.5.2 Combining Point Events and OWIN Object
+
+Now, we’ll extract the relevant point events that are located within Singapore.
+
+### 2.5.5.2.1 Origin Points in OWIN Object
+
+```{r}
+#| eval: false
+grab_origin_ppp_sg <- grab_origin_ppp[sg_owin]
+```
+
+```{r}
+#write_rds(grab_origin_ppp_sg, "data/rds/grab_origin_ppp_sg.rds")
+grab_origin_ppp_sg <- read_rds("data/rds/grab_origin_ppp_sg.rds")
+par(mar = c(1,1,1,1))
+plot(grab_origin_ppp_sg, main = '[OWIN] Grab Origin Points' )
+```
+
+::: callout-tip
+We'll save the output in .rds file format to save loading time.
+:::
+
+### 2.5.5.2.1 Destination Points in OWIN Object
+
+```{r}
+#| eval: false
+grab_dest_ppp_sg <- grab_dest_ppp[sg_owin]
+```
+
+```{r}
+#write_rds(grab_dest_ppp_sg, "data/rds/grab_dest_ppp_sg.rds")
+grab_dest_ppp_sg <- read_rds("data/rds/grab_dest_ppp_sg.rds")
+par(mar = c(1,1,1,1))
+plot(grab_dest_ppp_sg, main = '[OWIN] Grab Destination Points' )
+```
+
+::: callout-tip
+We'll save the output in .rds file format to save loading time.
+:::
+
+## 3.0 Exploratory Data Analysis
+
+To better understand the spatial data, we employ a series of exploratory techniques.
+
+### 3.1 Spatial Relationship between Origin and Destination Points
+
+The map below shows the geographical distribution of origin and destination points. By overlaying both sets of points, we can observe areas where origin and destination locations overlap. These overlapping areas indicate regions with bidirectional travel.
+
+```{r}
+combined_map <- ggplot() +
+  geom_sf(data = grab_origin, aes(color = "Origin"), alpha = 0.7) +
+  geom_sf(data = grab_dest, aes(color = "Destination"), alpha = 0.7) +
+  ggtitle("Spatial Relationship Between Origin and Destination Locations") +
+  labs(color = "Location Type") +
+  scale_color_manual(values = c("Origin" = "blue", "Destination" = "red"), 
+                     name = "Location Type", 
+                     labels = c("Origin", "Destination")) +
+  theme_minimal()
+
+print(combined_map)
+
+```
+
+### 3.2 Spatio-Temporal Visualisations
+
+Spatio-temporal visualisations show us a view of how data evolves over both space and time. These visualisations are particularly useful for analysing patterns, trends, and relationships within datasets.
+
+### 3.2.1 Frequency of Trip by Hour
+
+Let's create interactive plots to provide an insightful representation of the distribution of origin/destination locations and emphasise the specific hours that stand out in terms of pickup/drop-off frequency.
+
+### 3.2.1.1 Origin or Pickup Frequency
+
+For creating a bar plot with `ggplot`, the pickup hours are first converted to numeric values for analysis. TThe x-axis represents the pickup hours, and the y-axis represents the count of origin locations. To highlight the hours with the highest count with a visual indication, we add a red dashed vertical line on the plot. The **`ggplot`** object is then converted into an interactive plot using **`ggplotly`**, allowing users to hover over bars for detailed information.
+
+```{r}
+grab_origin$start_hr <- as.numeric(grab_origin$start_hr)
+org<- ggplot(data = grab_origin, aes(x = start_hr)) +
+  geom_bar() +
+  labs(title = "Distribution of Origin Locations by Pickup Hour",
+       x = "Pickup Hour",
+       y = "Count") +
+  scale_x_continuous(breaks = seq(0, 24, by = 1)) +
+  theme_minimal()
+max_hour <- which.max(table(grab_origin$start_hr))
+org <- org + geom_vline(xintercept = max_hour, linetype = "dashed", color = "red")
+
+org <- ggplotly(org)
+org
+```
+
+The chart above indicates that most pickups occur at 2-3pm, a potential reason could include:
+
+> **After-School Activities**: this time period may coincide with school release times and after-school activities. Parents might be picking up children or transporting them to various activities.
+
+### 3.2.1.2 Destination or Drop-off Frequency
+
+For creating a bar plot with `ggplot`, the drop-off hours are first converted to numeric values for analysis. TThe x-axis represents the drop-off hours, and the y-axis represents the count of destination locations. To highlight the hours with the highest count with a visual indication, we add a red dashed vertical line on the plot. The **`ggplot`** object is then converted into an interactive plot using **`ggplotly`**, allowing users to hover over bars for detailed information.
+
+```{r}
+grab_dest$end_hr <- as.numeric(grab_dest$end_hr)
+dest<- ggplot(data = grab_dest, aes(x = end_hr)) +
+  geom_bar() +
+  labs(title = "Distribution of Destinatioon Locations by Drop-off Hour",
+       x = "Drop-off Hour",
+       y = "Count") +
+  scale_x_continuous(breaks = seq(0, 24, by = 1)) +
+  theme_minimal()
+max_hour <- which.max(table(grab_dest$end_hr))
+dest <- dest + geom_vline(xintercept = max_hour, linetype = "dashed", color = "red")
+
+dest <- ggplotly(dest)
+dest
+```
+
+The chart above indicates that most drop-offs occur at 2pm, a potential reason could include:
+
+> **Lunchtime Rush**: 2pm is often around the time people finish their lunch breaks. This could result in increased travel demand as people return to work or resume their activities.
+
+### 3.2.2 Frequency of Trip by Day of Week
+
+Let's create a bar chart to explore the frequency of origins/destinations across different days and identify any noteworthy patterns.
+
+### 3.2.2.1 Origin or Pickup Frequency by Days
+
+The code uses `ggplot` to create a bar plot, where each bar represents the frequency of pickups on a specific day. This code produces a informative visualisation to explore patterns in pickup frequency throughout the week.
+
+```{r}
+origin_day <- ggplot(data = grab_origin, aes(x = weekday))  +
+              geom_bar(fill = "#4C78A8", color = "#4C78A8", alpha = 0.8) +
+              labs(title = "Frequency of Pickup by Day of Week",
+                   x = "Day",
+                   y = "Count") +
+              theme_minimal()
+origin_day <- ggplotly(origin_day)
+origin_day
+```
+
+> The distribution of trips across days appears generally uniform, with a subtle increase observed on Wednesdays.
+
+### 3.2.2.2 Destination or Drop-off Frequency by Days
+
+The code uses `ggplot` to create a bar plot, where each bar represents the frequency of drop-offs on a specific day. This code produces a informative visualisation to explore patterns in drop-off frequency throughout the week.
+
+```{r}
+dest_day <- ggplot(data = grab_dest, aes(x = weekday))  +
+              geom_bar(fill = "#FF0000", color = "#FF0000", alpha = 0.8) +
+              labs(title = "Frequency of Drop-off by Day of Week",
+                   x = "Day",
+                   y = "Count") +
+              theme_minimal()
+dest_day <- ggplotly(dest_day)
+dest_day
+```
+
+> If we plot by destination, we see the same result. This is expected, considering that each trip's origin corresponds to a destination.
+
+## **4.0 First-Order Spatial Point Patterns Analysis**
+
+First-order spatial point pattern analysis focuses on the distribution of individual points in a given spatial domain. It involves examining the basic characteristics and properties of the point pattern itself, without considering the interactions or relationship between points.
+
+### **4.1** Rescale `grab_original_ppp_sg` and `grab_dest_ppp_sg`
+
+For further analysis, it is necessary to convert our data to kilometers, and we can achieve this by utilising the `rescale` function on `grab_original_ppp_sg` and `grab_dest_ppp_sg` which are in metres.
+
+```{r}
+#| eval: false
+grab_origin_ppp_sg_km <- rescale(grab_origin_ppp_sg, 1000, 'km')
+grab_dest_ppp_sg_km <- rescale(grab_dest_ppp_sg, 1000, 'km')
+```
+
+```{r}
+#write_rds(grab_origin_ppp_sg_km, "data/rds/grab_origin_ppp_sg_km.rds")
+grab_origin_ppp_sg_km <- read_rds("data/rds/grab_origin_ppp_sg_km.rds")
+```
+
+::: callout-tip
+We'll save the output in .rds file format to save loading time.
+:::
+
+```{r}
+#write_rds(grab_dest_ppp_sg_km, "data/rds/grab_dest_ppp_sg_km.rds")
+grab_dest_ppp_sg_km <- read_rds("data/rds/grab_dest_ppp_sg_km.rds")
+```
+
+::: callout-tip
+We'll save the output in .rds file format to save loading time.
+:::
+
+> [**Proceed to Take-home Exercise 1b: Analysis**](Take-home_Ex/Take-home_Ex01/Take-home_Ex01b.html)

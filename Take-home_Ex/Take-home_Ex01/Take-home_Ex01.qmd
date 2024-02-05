@@ -1,8 +1,9 @@
 ---
-title: "Take-home Exercise 1: Application of Spatial Point Patterns Analysis to Discover the Geographical Distribution of Grab Hailing Services in Singapore"
+title: "Take-home Exercise 1: Application of Spatial Point Patterns Analysis to Discover the Geographical Distribution of Grab Hailing Services in Singapore [DATA PREPARATION]"
 execute: 
   warning: false
-  
+  eval: false
+  freeze: true
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 ---
 
@@ -57,7 +58,7 @@ By this exercise, I will:
 The study will utilise the following datasets to explore spatial point patterns analysis methods and reveal the geographical and spatio-temporal distribution of Grab hailing services locations in Singapore.
 
 | Dataset Name                               | Type                | Source                                                              | Path                                     |
-|----------------|----------------|-------------------------|----------------|
+|-----------------|-----------------|-----------------------|-----------------|
 | Grab-Posisi                                | Aspatial (.parquet) | <https://engineering.grab.com/grab-posisi>                          | data/aspatial/grabPosisi                 |
 | Master Plan 2019 Subzone Boundary (No Sea) | Geospatial (.shp)   | <https://beta.data.gov.sg/collections/2104/view>                    | data/geospatial/MPSZ-2019                |
 | Open Street Map Road Data                  | Geospatial (.shp)   | <https://download.geofabrik.de/asia/malaysia-singapore-brunei.html> | data/geospatial/OSM/gis_osm_roads_free_1 |
@@ -155,6 +156,7 @@ outer <- dplyr::bind_rows(list(semakau,sudong,bukom,north,south))
 We use the `st_union` function again to merge the geometries of `mpsz_sf` and `outer`, and the `st_difference` function to eliminate the overlap between the two layers. This results in a coastal boundary, `sg_sf`, which excludes the outer islands.
 
 ```{r}
+#| eval: false
 sg_sf <- st_difference(st_union(mpsz_sf), st_union(outer))
 plot(sg_sf)
 ```
@@ -162,6 +164,11 @@ plot(sg_sf)
 ::: callout-tip
 ✅ Task Complete! We have obtained the coastal boundary layer of Singapore, excluding the outer islands.
 :::
+
+```{r}
+#write_rds(sg_sf, "data/rds/sg_sf.rds")
+sg_sf <- read_rds("data/rds/sg_sf.rds")
+```
 
 ### 2.3.3 Open Street Map Road Data
 
@@ -181,7 +188,13 @@ Given that our dataset corresponds to the geographical boundaries of Singapore, 
 This dataset encompasses road networks spanning Singapore, Malaysia, and Brunei. To narrow our focus, we will extract roads exclusively within the Singapore boundary using the `st_intersection` function to check the intersection between `sg_sf` and `allroads`.
 
 ```{r}
+#| eval: false
 sg_roads_all <- st_intersection(allroads,sg_sf)
+```
+
+```{r}
+#write_rds(sg_roads_all, "data/rds/sg_roads_all.rds")
+sg_roads_all <- read_rds("data/rds/sg_roads_all.rds")
 ```
 
 The next step involves examining the various road types within the road network.
@@ -565,8 +578,19 @@ First-order spatial point pattern analysis focuses on the distribution of indivi
 For further analysis, it is necessary to convert our data to kilometers, and we can achieve this by utilising the `rescale` function on `grab_original_ppp_sg` and `grab_dest_ppp_sg` which are in metres.
 
 ```{r}
+# | eval: false
 grab_origin_ppp_sg_km <- rescale(grab_origin_ppp_sg, 1000, 'km')
 grab_dest_ppp_sg_km <- rescale(grab_dest_ppp_sg, 1000, 'km')
+```
+
+```{r}
+#write_rds(grab_origin_ppp_sg_km, "data/rds/grab_origin_ppp_sg_km.rds")
+grab_origin_ppp_sg_km <- read_rds("data/rds/grab_origin_ppp_sg_km.rds")
+```
+
+```{r}
+#write_rds(grab_dest_ppp_sg_km, "data/rds/grab_dest_ppp_sg_km.rds")
+grab_dest_ppp_sg_km <- read_rds("data/rds/grab_dest_ppp_sg_km.rds")
 ```
 
 ### 4.2 Kernel Density Estimation

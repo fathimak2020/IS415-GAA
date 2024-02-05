@@ -1,0 +1,796 @@
+---
+title: "Take-home Exercise 1b [ANALYSIS]: Application of Spatial Point Patterns Analysis to Discover the Geographical Distribution of Grab Hailing Services in Singapore"
+execute: 
+  warning: false
+  freeze: true
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+---
+
+## Import Data
+
+```{r}
+ pacman::p_load(arrow, dplyr, lubridate, maptools, raster, rgdal, RColorBrewer, rmapshaper, sf, sp, spNetwork, spatstat, tidyverse, tmap, ggplot2, plotly)
+
+#update.packages(ask = FALSE, dependencies = TRUE)
+## install.packages("maptools", repos = "https://packagemanager.posit.co/cran/2023-10-13")
+```
+
+```{r}
+
+mpsz_sf <- st_read(dsn = "data/geospatial", 
+                layer = "MPSZ-2019") %>%
+    st_transform(crs = 3414)
+
+grab_origin <- read_rds("data/rds/grab_origin.rds")
+
+grab_origin_ppp_sg_km <- read_rds("data/rds/grab_origin_ppp_sg_km.rds")
+
+grab_dest_ppp_sg_km <- read_rds("data/rds/grab_dest_ppp_sg_km.rds")
+
+grab_origin_ppp_sg <- read_rds("data/rds/grab_origin_ppp_sg.rds")
+
+grab_dest_ppp_sg <- read_rds("data/rds/grab_dest_ppp_sg.rds")
+
+sg_owin <- read_rds("data/rds/sg_owin")
+
+sg_roads <- read_rds("data/rds/sg_roads.rds")
+```
+
+### 4.2 Kernel Density Estimation
+
+Kernel Density Estimation (KDE) is a technique used in spatial point pattern analysis to estimate the density of events across a continuous space based on a set of observed point locations. It is particularly when we have a set of spatial points and want to visualise the spatial distribution of these points in a smoother and more continuous way.
+
+The are different approaches for selecting the bandwidth or smoothing parameter of the kernel.
+
+-   automatic bandwidth method
+
+-   fixed bandwidth method
+
+### 4.2.1 Automatic bandwidth method
+
+Here the bandwidth is determined automatically by the algorithm based on some optimisation criterion.
+
+There are several spatstat functions that we can use for automatic bandwidth selection.
+
+The `density` function allows us to compute a kernel density for a given set of point events.
+
+First, we use the `bw.diggle()` method.
+
+-   [`bw.diggle()`](https://search.r-project.org/CRAN/refmans/spatstat.explore/html/bw.diggle.html) Cross Validated Bandwidth Selection for Kernel Density
+
+```{r}
+kde_grab_origin_sg_bw <- density(grab_origin_ppp_sg_km,
+                                   sigma=bw.diggle,
+                                   edge=TRUE,
+                                   kernel="gaussian")
+
+```
+
+```{r}
+par(mar = c(1,1,1,1))
+plot(kde_grab_origin_sg_bw,main = "KDE Automatic Bandwidth for Origin Points")
+
+```
+
+```{r}
+kde_grab_dest_sg_bw <- density(grab_dest_ppp_sg_km,
+                                   sigma=bw.diggle,
+                                   edge=TRUE,
+                                   kernel="gaussian")
+kde_grab_dest_sg_bw
+```
+
+```{r}
+par(mar = c(1,1,1,1))
+plot(kde_grab_dest_sg_bw,main = "KDE Automatic Bandwidth for Destination Points")
+```
+
+### 4.2.1.1 Other Bandwidth Selection Methods
+
+Additionally we can choose from a series of options for 'kernel' which is the smoothing parameter that we will explore later. Let's explore the other methods for automatic bandwidth selection and retrieve sigma value. The sigma value tells us the amount of smoothing applied when estimating the kernel density.
+
+-   [`bw.diggle()`](https://search.r-project.org/CRAN/refmans/spatstat.explore/html/bw.diggle.html) Cross Validated Bandwidth Selection for Kernel Density
+
+```{r}
+bw_diggle <- bw.diggle(grab_origin_ppp_sg_km)
+bw_diggle
+```
+
+-   [`bw.CvL()`](https://search.r-project.org/CRAN/refmans/spatstat.explore/html/bw.CvL.adaptive.html) Cronie and Van Lieshout’s Criterion for Bandwidth Selection for Kernel Density
+
+```{r}
+bw_CvL <- bw.CvL(grab_origin_ppp_sg_km)
+bw_CvL
+```
+
+-   [`bw.scott()`](https://www.rdocumentation.org/packages/spatstat/versions/1.64-1/topics/bw.scott) Scott’s Rule for Bandwidth Selection for Kernel Density
+
+```{r}
+bw_scott <- bw.scott(grab_origin_ppp_sg_km)
+bw_scott
+```
+
+-   [`bw.ppl()`](https://search.r-project.org/CRAN/refmans/spatstat.explore/html/bw.pplHeat.html) Likelihood Cross Validation Bandwidth Selection for Kernel Density
+
+```{r}
+bw_ppl <- bw.ppl(grab_origin_ppp_sg_km)
+bw_ppl
+```
+
+Let's plot to compare the output of each method, so that we can see the distinct differences in KDE layers .
+
+```{r}
+kde_diggle <- density(grab_origin_ppp_sg_km, bw_diggle)
+kde_CvL <- density(grab_origin_ppp_sg_km, bw_CvL)
+kde_scott <- density(grab_origin_ppp_sg_km, bw_scott)
+kde_ppl <- density(grab_origin_ppp_sg_km, bw_ppl)
+
+par(mfrow = c(2,2), mar = c(1,1,1,1))
+plot(kde_diggle,main = "KDE diggle")
+plot(kde_CvL,main = "KDE CvL")
+plot(kde_scott,main = "KDE Scott")
+plot(kde_ppl,main = "KDE ppl")
+```
+
+> From first glance, it looks as though `KDE Scott` shows the best resuts with the clearest peaks.
+>
+> But in order to pick the most suitable method for our analysis, we need to compare the distribution of KDE values. We can do so simply by visualising the distribution using histograms. Let's check again `KDE Scott` shows the most ideal result.
+
+```{r}
+par(mfrow = c(2,2),mar = c(3,3,3,3))
+hist(kde_diggle,main = "KDE diggle")
+abline(v=50, 
+       col="red")
+hist(kde_CvL,main = "KDE CvL")
+abline(v=50, 
+       col="red")
+hist(kde_scott,main = "KDE Scott")
+abline(v=50, 
+       col="red")
+hist(kde_ppl,main = "KDE ppl")
+abline(v=50, 
+       col="red")
+```
+
+### 4.2.1.2 Choosing the Most Appropriate KDE Selection Method
+
+> Looking at the histograms, the one for `bw_scott()` shows that it has a broad spread as compared to the others and does not peak which means there is an even distribution of points across all bins. Therefore we will pick `bw_scott()`.
+
+### 4.2.2 Fixed Bandwidth Selection
+
+Here, we manually specify a fixed bandwidth value for the KDE layer. This allows us to control the level of smoothing applied to the point pattern. We will plot using `bw_scott()`as identified previously as the most suitable method.
+
+```{r}
+fixed_bw_scott <- bw.scott(grab_origin_ppp_sg_km)
+fixed_bw_scott
+```
+
+The values returned are 1.59 and 0.94 for sigma.x and sigma.y respectively.
+
+Then, we plot to visualise the fixed bandwidth using `bw_scott`
+
+```{r}
+kde_fixed_bw_scott <- density(grab_origin_ppp_sg_km, fixed_bw_scott)
+par(mar = c(1,1,1,1))
+plot(kde_fixed_bw_scott, main ='Scott Method Fixed Bandwidth KDE for Origin Points')
+```
+
+### 4.2.3 Different Kernel Function Selection Methods for Fixed Bandwidth
+
+The default kernel in `density.ppp()` is the `gaussian`. There are other options such as `epanechnikov`, `quartic` and `disc`.
+
+Let's explore the different kernel function selection methods.
+
+```{r}
+kde_fixed_bw_scott_gaussian <- density(grab_origin_ppp_sg_km, 
+                          sigma=fixed_bw_scott, 
+                          edge=TRUE, 
+                          kernel="gaussian")
+
+
+kde_fixed_bw_scott_epanechnikov <- density(grab_origin_ppp_sg_km, 
+                          sigma=fixed_bw_scott, 
+                          edge=TRUE, 
+                          kernel="epanechnikov")
+   
+kde_fixed_bw_scott_quartic <- density(grab_origin_ppp_sg_km, 
+                          sigma=fixed_bw_scott, 
+                          edge=TRUE, 
+                          kernel="quartic")
+       
+   
+kde_fixed_scott_disc <- density(grab_origin_ppp_sg_km, 
+                          sigma=fixed_bw_scott, 
+                          edge=TRUE, 
+                          kernel="disc")
+         
+
+```
+
+Let's visualise the different kernel methods.
+
+```{r}
+par(mfrow = c(2,2), mar = c(2,2,2,2))
+plot(kde_fixed_bw_scott_gaussian, main="Gaussian")
+plot(kde_fixed_bw_scott_epanechnikov, main="Epanechnikov")
+plot(kde_fixed_bw_scott_quartic, main="Quartic")
+plot(kde_fixed_scott_disc,main="Disc")
+```
+
+There are subtle differences in the smoothness and dispersion among the four plots, but they collectively show the same pattern in the end.
+
+### 4.2.3 KDE Layers with Spatially Adaptive Bandwidth
+
+Here, we use the most common adaptive bandwidth method called Adaptive Kernel Density Estimate.
+
+```{r}
+kde_adaptive <- adaptive.density(grab_origin_ppp_sg_km, method="kernel")
+```
+
+### 4.2.4 Comparing Fixed and Adaptive Bandwidth
+
+Let's do a side-by-side comparision of fixed bandwidth and adaptive bandwidth method .
+
+```{r}
+par(mfrow=c(1,2), mar = c(3,3,3,3))
+plot(kde_fixed_bw_scott_gaussian, main = "Fixed bandwidth")
+plot(kde_adaptive, main = "Adaptive bandwidth")
+```
+
+> The fixed bandwidth method makes it easier to identify areas of higher origin point clusters
+
+### 4.2.5 Interactive KDE Maps
+
+Now let's plot interactive KDE maps to have a closer look.
+
+### 4.2.5.1 Converting KDE Output into Grid Object into RasterLayer Object
+
+We need to convert our KDE output into grid objects for mapping purposes, here we use the `raster()` function.
+
+```{r}
+kde_fixed_bw_scott_raster <- raster(kde_fixed_bw_scott)
+kde_adaptive_kernel_raster <- raster(kde_adaptive)
+```
+
+Then we perform project transformation.
+
+```{r}
+projection(kde_fixed_bw_scott_raster) <- CRS("+init=EPSG:3414 +units=km")
+projection(kde_adaptive_kernel_raster) <- CRS("+init=EPSG:3414 +units=km")
+```
+
+### 4.2.5.2 Kernel Density Maps on OpenStreetMap
+
+Finally, we can visualise our Kernel Density Maps on OpenStreetMap
+
+```{r}
+tmap_mode('view')
+kde_fixed_bw_scott_map <- tm_basemap("OpenStreetMap") +
+  tm_view(set.zoom.limits=c(10, 15)) +
+  tm_shape(kde_fixed_bw_scott_raster) +
+  tm_raster(alpha = 0.65, title = "KDE_Fixed_Scott", palette = brewer.pal(12, "Set3")) +
+  tm_shape(mpsz_sf)+
+  tm_polygons(alpha=0.1, id="PLN_AREA_N")+
+  tmap_options(check.and.fix = TRUE)+
+  tm_layout(title = "Scott Method Fixed Bandwidth KDE for Origin Points")
+tmap_leaflet(kde_fixed_bw_scott_map)
+
+```
+
+```{r}
+tmap_mode('view')
+kde_adaptive_kernel_map <- tm_basemap("OpenStreetMap") +
+  tm_view(set.zoom.limits=c(10, 15)) +
+  tm_shape(kde_adaptive_kernel_raster) +
+  tm_raster(alpha = 0.65, title = "KDE_Adaptive_Kernel", palette = brewer.pal(12, "Set3")) +
+  tm_shape(mpsz_sf)+
+  tm_polygons(alpha=0.1, id="PLN_AREA_N")+
+  tmap_options(check.and.fix = TRUE)+
+  tm_layout(title = "Adaptive Bandwidth KDE for Origin Points")
+tmap_leaflet(kde_adaptive_kernel_map)
+
+```
+
+### 4.2.6 Kernel Density Map Analysis
+
+Let's begin by extracting insights from the fixed bandwidth map, where it's notably easier to identify the high-density pickup areas represented by yellow clusters. A prominent cluster emerges in the central-south region, encompassing stations such as Newton, Orchard, Downtown East, and Rochor. These areas exhibit increased demand for Grab pickups, potentially influenced by their status as tourist attractions. The tendency for individuals to explore these locales and then opt for Grab as their origin point prompts questions about the efficacy of public transport planning in encouraging more sustainable transportation choices.
+
+Additionally, a big cluster forms at Changi Airport, which is quite understandable. Travelers landing in Singapore, often fatigued and burdened with luggage, may prefer the convenience of Grab over public transportation for their journey home.
+
+Beyond these, smaller yet discernible clusters show up in various residential zones. Referencing the adaptive bandwidth map for precise locations, we observe clusters in the north (Choa Chu Kang, Bukit Panjang), west (Jurong West, Jurong East), east (Tampines, Pasir Ris), and north-east (Woodlands, Sembawang, Yishun). This prompts further inquiries into the connectivity of these regions to public transport networks and the factors influencing residents to choose Grab over alternative transportation modes.
+
+In essence, these spatial patterns raise intriguing questions about the accessibility and appeal of public transportation in these specific areas.
+
+### 4.2.7 Extract Planning Areas
+
+From the array of residential clusters pinpointed in the previous section, we will focus on four specific stations, each corresponding to distinct geographical regions: north, east, west, and north-east.
+
+-   North: Choa Chu Kang
+
+-   West: Jurong East
+
+-   East: Tampines
+
+-   North-East: Woodlands
+
+Let's extract out these study areas from `mpsz_sf` using `filter` and store it in new objects.
+
+```{r}
+je = mpsz_sf%>%
+  filter(PLN_AREA_N == "JURONG EAST")
+tm = mpsz_sf%>%
+  filter(PLN_AREA_N == "TAMPINES")
+ck = mpsz_sf%>%
+  filter(PLN_AREA_N == "CHOA CHU KANG")
+wd = mpsz_sf%>%
+  filter(PLN_AREA_N == "WOODLANDS")
+```
+
+### 4.2.7.1 Plotting Target Planning Areas
+
+```{r}
+par(mfrow=c(2,2))
+plot(st_geometry(je), main = "Jurong East")
+plot(st_geometry(tm), main = "Tampines")
+plot(st_geometry(ck), main = "Choa Chu Kang")
+plot(st_geometry(wd), main = "Woodlands")
+```
+
+Next, we will create `owin` objects to represent the observation windows for respective planning area.
+
+```{r}
+je_owin = as.owin(je)
+tm_owin = as.owin(tm)
+ck_owin = as.owin(ck)
+wd_owin = as.owin(wd)
+
+origin_je_ppp = grab_origin_ppp_sg[je_owin]
+origin_tm_ppp = grab_origin_ppp_sg[tm_owin]
+origin_ck_ppp = grab_origin_ppp_sg[ck_owin]
+origin_wd_ppp = grab_origin_ppp_sg[wd_owin]
+```
+
+#### **4.2.7.2 KDE Fixed-Bandwidth for Target Planning Areas**
+
+```{r}
+je_kde_scott <- density(origin_je_ppp, sigma=bw.scott, main="Jurong East")
+tm_kde_scott <- density(origin_tm_ppp, sigma=bw.scott, main="Tampines")
+ck_kde_scott <- density(origin_ck_ppp, sigma=bw.scott, main="Choa Chu Kang")
+wd_kde_scott <- density(origin_wd_ppp, sigma=bw.scott, main="Woodlands")
+
+
+par(mfrow = c(2,2))
+plot(je_kde_scott,main = "KDE Jurong East")
+plot(tm_kde_scott,main = "KDE Tampines")
+plot(ck_kde_scott,main = "KDE Choa Chu Kang")
+plot(wd_kde_scott,main = "KDE Woodlands")
+```
+
+Now, identifying clusters within each planning area is easily achievable. However, pinpointing the exact locations of these clusters requires the incorporation of road networks for each planning area. To achieve this precision, we will leverage a more advanced KDE technique known as Network Kernel Density Estimation (NKDE) in the upcoming sections. This approach will provide deeper insights into the specific roads or areas within each planning area that host these clusters.
+
+### 4.2.8 Nearest Neighbour Analysis
+
+Nearest Neighbor Analysis helps assess whether the observed spatial pattern is clustered, dispersed, or random.
+
+Here we will be using the Clark-Evans Test of Aggregation.
+
+### 4.2.8.1 Clark-Evans Test of Aggregation
+
+Here, we will perform the Clark-Evans test of aggregation for a spatial point pattern by using [*clarkevans.test()*](https://www.rdocumentation.org/packages/spatstat/versions/1.63-3/topics/clarkevans.test) of **statspat**.
+
+### 4.2.8.1.1 Origin Points in Jurong East
+
+The test hypotheses are:
+
+-   H~0~ = The distribution of origin points in Jurong East are randomly distributed
+
+-   H~1~= The distribution of origin points in Jurong East are not randomly distributed
+
+The 95% confident interval will be used.
+
+```{r}
+clarkevans.test(origin_je_ppp,
+                correction="none",
+                clipregion="sg_owin",
+                alternative=c("clustered"),
+                nsim=99)
+```
+
+We can conclude that the distribution of origin points in Jurong East is **not randomly distributed**
+
+### 4.2.8.1.2 Origin Points in Tampines
+
+The test hypotheses are:
+
+-   H~0~ = The distribution of origin points in Tampines are randomly distributed
+
+-   H~1~= The distribution of origin points in Tampines are not randomly distributed
+
+The 95% confidence interval will be used.
+
+```{r}
+clarkevans.test(origin_tm_ppp,
+                correction="none",
+                clipregion="sg_owin",
+                alternative=c("clustered"),
+                nsim=99)
+```
+
+We can conclude that the distribution of origin points in Tampines is **not randomly distributed**
+
+### 4.2.8.1.3 Origin Points in Choa Chu Kang
+
+The test hypotheses are:
+
+-   H~0~ = The distribution of origin points in Choa Chu Kang are randomly distributed
+
+-   H~1~= The distribution of origin points in Choa Chu Kang are not randomly distributed
+
+The 95% confidence interval will be used.
+
+```{r}
+clarkevans.test(origin_ck_ppp,
+                correction="none",
+                clipregion="sg_owin",
+                alternative=c("clustered"),
+                nsim=99)
+```
+
+We can conclude that the distribution of origin points in Choa Chu Kang is **not randomly distributed**
+
+### 4.2.8.1.4 Origin Points in Woodlands
+
+The test hypotheses are:
+
+-   H~0~ = The distribution of origin points in Woodlands are randomly distributed
+
+-   H~1~= The distribution of origin points in Woodlands are not randomly distributed
+
+The 95% confidence interval will be used.
+
+```{r}
+clarkevans.test(origin_wd_ppp,
+                correction="none",
+                clipregion="sg_owin",
+                alternative=c("clustered"),
+                nsim=99)
+```
+
+We can conclude that the distribution of origin points in Woodlands is **not randomly distributed**
+
+## **5.0 Network Constrained Kernel Density Estimation (NKDE)**
+
+Network Kernel Density Estimation (NKDE) is an advanced technique that builds upon the traditional KDE method.
+
+We employ NKDE because the distribution of origin points in our planning areas is not randomly distributed; it is significantly influenced by network structures. NKDE allows us to incorporate this network context, providing a more accurate representation of spatial patterns, particularly along roadways. By considering the connectivity and pathways of the network, NKDE enhances our ability to capture the nuanced distribution of clusters within each planning area, leading to more insightful and precise spatial analysis results
+
+The main difference between the KDE and NKDE is that KDE treats space as a continuous field, and overlooks the underlying network structure, such as roads. NKDE takes into account the network structure, and recognises that spatial relationships may be constrained by the existing road infrastructure. Therefore, NKDE offers better localization of clusters by considering the connectivity and pathways of the network.
+
+Here, we will use `spNetwork` to create NKDE maps for each of our planning areas and explore what insights we can yield from each.
+
+## 5.1 Extract origin points and road network of our study areas
+
+Firstly we need to extract the road networks within each of our study area by using `st_intersection`. We also use `st_union` to combine all the geometries of each object into a single geometry.
+
+```{r}
+je_roads = st_intersection(sg_roads,st_union(je))
+tm_roads = st_intersection(sg_roads,st_union(tm))
+ck_roads = st_intersection(sg_roads,st_union(ck))
+wd_roads = st_intersection(sg_roads,st_union(wd))
+```
+
+After that, we will use `st_intersection` again to find the origin spots that intersect with our planning areas.
+
+```{r}
+je_origin = st_intersection(grab_origin,st_union(je))
+tm_origin = st_intersection(grab_origin,st_union(tm))
+ck_origin = st_intersection(grab_origin,st_union(ck))
+wd_origin = st_intersection(grab_origin,st_union(wd))
+
+```
+
+## 5.2 Lixels
+
+Each network edge is divided into lixels which represent the lines of the network. To get the lixels of each planning area we use the `st_cast` function first to convert the geometry types of the features in our object to LINESTRING.
+
+```{r}
+je_roads <- st_cast(je_roads, "LINESTRING")
+tm_roads <- st_cast(tm_roads, "LINESTRING")
+ck_roads <- st_cast(ck_roads, "LINESTRING")
+wd_roads <- st_cast(wd_roads, "LINESTRING")
+```
+
+After we have converted the geometry type of our planning areas, we use `lixelize_lines` to create lixels from a set of road lines represented by the planning area objects. The road lines are divided into lixels, each with a length of 750 units. `mindist` represents the minimum distance between lixels to ensure that resulting lixels are not too close to each other. If the length of the resulting lixel is less than the specified minimum distance, it is combined with the previous lixel.
+
+```{r}
+je_lixels <- lixelize_lines(je_roads, 
+                         750, 
+                         mindist = 375)
+
+tm_lixels <- lixelize_lines(tm_roads, 
+                         750, 
+                         mindist = 375)
+
+ck_lixels <- lixelize_lines(ck_roads, 
+                         750, 
+                         mindist = 375)
+
+wd_lixels <- lixelize_lines(wd_roads, 
+                         750, 
+                         mindist = 375)
+```
+
+## 5.3 Line Center
+
+Then we extract the centers of the lixels using `lines_center`. These serve as the locations for intensity estimation.
+
+```{r}
+je_samples <- lines_center(je_lixels)
+tm_samples <- lines_center(tm_lixels)
+ck_samples <- lines_center(ck_lixels)
+wd_samples <- lines_center(wd_lixels)
+```
+
+## 5.4 Using Simple Method to Compute NKDE
+
+Finally we use the `nkde` function from `spNetwork` to get the NKDE. There are several parameters that we can define
+
+-   `events`: the event associated with the analysis
+-   `w`: weight vector, creates a vector of ones with a length equal to the number of rows in the planning area data frame
+-   `samples`: samples used for density estimation
+-   `kernel_name`: type of kernel to be used
+-   `bw`: determines the scale of influence for each point in the density estimation
+-   `div`: the method used to determine the bandwidth
+-   `method`: method used for density estimation
+-   `digits`: number of significant digits displayed in the output
+-   `tol`: tolerance level for convergence in iterative algorithms
+-   `grid_shape`: shape of the grid for calculating the density
+-   `max_depth`: Maximum depth of the tree when building the spatial index
+-   `agg`: number of points aggregated into each grid cell
+-   `sparse`: whether to use sparse matrix representation for efficiency
+-   `verbose`: suppresses verbose output during the process
+
+```{r}
+je_density <- nkde(je_roads, 
+                  events = je_origin,
+                  w = rep(1,nrow(je_origin)),
+                  samples = je_samples,
+                  kernel_name = "quartic",
+                  bw = 300, 
+                  div= "bw", 
+                  method = "simple", 
+                  digits = 1, 
+                  tol = 1,
+                  grid_shape = c(1,1), 
+                  max_depth = 8,
+                  agg = 5,
+                  sparse = TRUE,
+                  verbose = FALSE)
+
+tm_density <- nkde(tm_roads, 
+                  events = tm_origin,
+                  w = rep(1,nrow(tm_origin)),
+                  samples = tm_samples,
+                  kernel_name = "quartic",
+                  bw = 300, 
+                  div= "bw", 
+                  method = "simple", 
+                  digits = 1, 
+                  tol = 1,
+                  grid_shape = c(1,1), 
+                  max_depth = 8,
+                  agg = 5,
+                  sparse = TRUE,
+                  verbose = FALSE)
+
+ck_density <- nkde(ck_roads, 
+                  events = ck_origin,
+                  w = rep(1,nrow(ck_origin)),
+                  samples = ck_samples,
+                  kernel_name = "quartic",
+                  bw = 300, 
+                  div= "bw", 
+                  method = "simple", 
+                  digits = 1, 
+                  tol = 1,
+                  grid_shape = c(1,1), 
+                  max_depth = 8,
+                  agg = 5,
+                  sparse = TRUE,
+                  verbose = FALSE)
+
+wd_density <- nkde(wd_roads, 
+                  events = wd_origin,
+                  w = rep(1,nrow(wd_origin)),
+                  samples = wd_samples,
+                  kernel_name = "quartic",
+                  bw = 300, 
+                  div= "bw", 
+                  method = "simple", 
+                  digits = 1, 
+                  tol = 1,
+                  grid_shape = c(1,1), 
+                  max_depth = 8,
+                  agg = 5,
+                  sparse = TRUE,
+                  verbose = FALSE)
+```
+
+We are also required to join the density values into the samples and lixels objects. The obtained densities will be scaled by the total number of origin points and we will multiply by 1000 for km measurement.
+
+```{r}
+je_samples$density <- je_density*nrow(je_origin)*1000
+je_lixels$density <- je_density*nrow(je_origin)*1000
+
+tm_samples$density <- tm_density*nrow(tm_origin)*1000
+tm_lixels$density <- tm_density*nrow(tm_origin)*1000
+
+ck_samples$density <- ck_density*nrow(ck_origin)*1000
+ck_lixels$density <- ck_density*nrow(ck_origin)*1000
+
+wd_samples$density <- wd_density*nrow(wd_origin)*1000
+wd_lixels$density <- wd_density*nrow(wd_origin)*1000
+```
+
+## 5.5 Plotting Maps for Different Study Areas
+
+Let's plot the NKDE map for each planning area.
+
+### 5.5.1 Jurong East
+
+```{r}
+tmap_mode('view')
+je_density_map <- tm_basemap("OpenStreetMap") +
+tm_shape(je_lixels)+
+  tm_lines(col ="density", lwd = 3, palette = brewer.pal(12, "Set3"))+
+tm_shape(je_origin)+
+  tm_dots(size=0.05)+
+  tm_layout(title = "Jurong East NKDE")
+tmap_leaflet(je_density_map)
+```
+
+::: callout-note
+**Analysis**
+
+In Jurong East, notable clusters of taxi pick-up points have been observed around Yuhua Place, Yuhua Senior Activity Center, New Jurong Polyclinic, and the nursing home vicinity. Additionally, clusters are prevalent near Parc Oasis, Singtel, Zai Shun Seafood, in proximity to Toh Guan, Westgate, Shen Hong Temple, Jurong East Interchange, IMM, Yuhua Primary School, and Crest Secondary School.
+
+This clustering phenomenon may be attributed to
+
+1.  **Commercial Hubs:** Areas like Westgate and IMM are major commercial centers, attracting a higher demand for Grab services. For example, people may book Grab to pick them up after they finish shopping in these areas.
+
+2.  **Healthcare Facilities:** Proximity to healthcare facilities such as the New Jurong Polyclinic and nursing homes may lead to increased transportation needs. For example, patients or visitors might utilise Grab for convenient travel from medical appointments, contributing to the clustering effect around healthcare establishments.
+
+3.  **Educational Institutions:** The presence of schools like Yuhua Primary School and Crest Secondary School could contribute to higher Grab demand during school-related activities. For example, parents may pick up their children after school and book Grab to their residence.
+
+4.  **Transportation Hubs:** Jurong East Interchange serves as a transportation hub, leading to concentrated Grab activity in the area. Commuters arriving at or departing from the interchange might prefer Grab for last-mile connectivity, resulting in a clustering effect around this transportation hub.
+
+5.  **Recreational Areas:** Clusters around Parc Oasis and Yuhua Senior Activity Center may be influenced by recreational and leisure activities. Caregivers visiting seniors at the Senior Activity Center may book Grab from there to their homes.
+
+6.  **Cultural and Religious Centers:** Locations like Shen Hong Temple may attract Grab pick-ups during events or gatherings. Attendees of cultural or religious events may use Grab for transportation from these centers.
+
+7.  **Residential Areas:** Proximity to residential areas like Yuhua Place may result in frequent Grab pickup requests for residents. Residents in these areas might regularly utilise Grab for daily commuting or transportation needs.
+
+8.  **Culinary Hotspots:** Clusters around Zai Shun Seafood restaurant may be influenced by popular dining establishments, drawing people to the area and making them book Grab from there to their journey back.
+:::
+
+### 5.5.2 Tampines
+
+```{r}
+tmap_mode('view')
+tm_density_map <- tm_basemap("OpenStreetMap") +
+tm_shape(tm_lixels)+
+  tm_lines(col ="density", lwd = 3, palette = brewer.pal(12, "Set3"))+
+tm_shape(tm_origin)+
+  tm_dots(size=0.05)+
+  tm_layout(title = "Tampines NKDE")
+tmap_leaflet(tm_density_map)
+
+```
+
+::: callout-note
+**Analysis**
+
+In Tampines, clusters of Grab pick-up points are notable around Our Tampines Hub, Tanah Merah Country Club, opposite Tampines Neighbourhood Police Center, opposite Ngee Ann Secondary School, Tampines East, Laguna Country Club, and East Coast Park.
+
+This clustering phenomenon may be attributed to
+
+**Recreational Clubs**: Areas like Tanah Merah Country Club and Laguna Country Club may contribute to clusters of Grab pick-up points. Individuals visiting these recreational clubs for leisure activities may opt for Grab services for their journey back from here for convenience.
+
+**Police Center**: The area opposite Tampines Neighbourhood Police Center may attract Grab pick-ups due visitors requiring transportation from the area.
+
+**Community and Recreational Center**: Our Tampines Hub is a central community and recreational center, leading to higher demand for Grab services. People utilising the various facilities may book Grab for their journeys back.
+
+**Educational Institutions**: The area opposite Ngee Ann Secondary School could contribute to higher Grab demand during school-related activities. For example, parents may pick up their children after school and book Grab to their residence.
+
+**Residential Areas**: Tampines East, being a residential area, may result in frequent Grab pickup requests for residents. Residents in these areas might regularly utilise Grab for daily commuting or transportation needs.
+
+**Recreational Destination**: East Coast Park, a popular recreational area, may attract individuals for outdoor activities. Visitors to the park may choose to book Grab for their journey back home, contributing to the clustering effect.
+:::
+
+### 5.5.3 Choa Chu Kang
+
+```{r}
+tmap_mode('view')
+ck_density_map <- tm_basemap("OpenStreetMap") +
+tm_shape(ck_lixels)+
+  tm_lines(col ="density", lwd = 3, palette = brewer.pal(12, "Set3"))+
+tm_shape(ck_origin)+
+  tm_dots(size=0.05)+
+  tm_layout(title = "Choa Chu Kang NKDE")
+tmap_leaflet(ck_density_map)
+```
+
+::: callout-note
+**Analysis**
+
+In Choa Chu Kang, clusters of Grab pick-up points can be seen around Inn See Temple, Choa Chu Kang Interchange, SAFRA\@CCK, Gain City, Lot One, Keat Hong Colours, Phoenix Station, Bukit Panjang Post Office, Yew Mei Condominium, MWS Nursing Home, and Yew Tee Point.
+
+This clustering phenomenon may be attributed to
+
+1.  **Cultural and Religious Centers:** Inn See Temple's vicinity may attract Grab pick-ups during religious events, contributing to the observed cluster.
+
+2.  **Transportation Hub:** Choa Chu Kang Interchange serves as a transportation hub, leading to concentrated Grab activity in the area. Commuters arriving at or departing from the interchange might prefer Grab for last-mile connectivity, resulting in a clustering effect around this transportation hub.
+
+3.  **Recreational Facility:** The presence of SAFRA\@CCK could contribute to increased Grab pickup activity, especially after events and recreational activities hosted at the facility.
+
+4.  **Shopping Centers:** Yew Tee Point, Gain City and Lot One, being prominent shopping destinations, may experience a higher level of Grab pick-up points as shoppers prefer convenient transportation after their shopping sprees.
+
+5.  **Residential Areas:** Clusters around Keat Hong Colours, and Yew Mei Condominium may be attributed to the residential nature of these areas, with residents relying on Grab for commuting needs.
+
+6.  **Postal Area:** Bukit Panjang Post Office may attract Grab pick-ups, for individuals who have completed their postal services or nearby activities.
+
+7.  **Healthcare:** Presence of MWS Nursing Home may lead to increased transportation needs. Caregivers visiting seniors at the nursing home may book Grab from there to their homes.
+:::
+
+### 5.5.4 Woodlands
+
+```{r}
+tmap_mode('view')
+wd_density_map <- tm_basemap("OpenStreetMap") +
+tm_shape(wd_lixels)+
+  tm_lines(col ="density", lwd = 3, palette = brewer.pal(12, "Set3"))+
+tm_shape(wd_origin)+
+  tm_dots(size=0.05)+
+  tm_layout(title = "Woodlands NKDE")
+tmap_leaflet(wd_density_map)
+```
+
+::: callout-note
+In Woodlands, distinct clusters of taxi pick-up points have been identified around Innova Junior College, Singapore Sports School, Civic Centre, STELLAR\@TE2, Singapore Turf Club, Old Woodlands Town Centre, Masjid An Nur, Woodlands Cinema, Greenwood Primary School, and Mega\@Woodlands.
+
+This clustering phenomenon may be attributed to
+
+1.  **Educational Institutions:** Clusters around Innova Junior College and Singapore Sports School could be attributed to the presence of these educational institutions. Students, staff, and visitors may opt for Grab for convenient transportation from these locations.
+
+2.  **Civic and Community Center:** Civic Centre, being a civic and community hub, may experience higher demand for Grab pickup services.
+
+3.  **Commercial Hub:** STELLAR\@TE2's may have individuals possibly relying on Grab for commuting on their journey back from here.
+
+4.  **Sports and Recreation:** The presence of Singapore Turf Club may contribute to the clustering effect, with people choosing Grab for transportation from sports and recreational activities.
+
+5.  **Commercial and Residential Hub:** Old Woodlands Town Centre's central location may attract Grab pick-ups from both commercial and residential areas.
+
+6.  **Religious Center:** Masjid An Nur's may witness increased Grab activity during religious events.
+
+7.  **Entertainment Venue:** Woodlands Cinema's indicates a potential concentration of Grab pick-up points, especially after movie screenings, as patrons opt for Grab for their journey home.
+
+8.  **Educational Facility:** Greenwood Primary School's location could contribute to higher Grab demand during school-related activities. For example, parents may pick up their children after school and book Grab to their residence.
+:::
+
+## 6.0 Conclusion
+
+Through this take-home exercise, we delved into Spatial Point Patterns Analysis to unravel the geographical distribution of Grab Hailing Services in Singapore. Our analyses provided valuable insights, unveiling patterns such as the peak day and time for Grab pick-ups, the specific locations where these pickups occur, hotspots, and the particular roads that witness heightened activity. This information serves as a strategic tool for better planning and decision-making.
+
+For instance, we can leverage these findings to enhance public transport accessibility. Understanding the road networks with the highest Grab pick-up activity allows us to identify areas where improved public transportation services could be implemented. This strategic planning aims to encourage people to opt for public transport, contributing to even pollution reduction by minimising car usage.
+
+In our future endeavors, we can expand our exploration by delving into temporal Network Kernel Density Estimation (NKDE). This advanced analysis will enable us to scrutinise the intricate relationship between time and Grab Hailing Services. By identifying popular pick-up points during specific time intervals, we can propose strategic interventions, such as increasing the number of buses, adjusting bus frequencies, or implementing targeted measures to enhance transportation infrastructure in those areas. This forward-looking approach ensures a nuanced understanding of temporal patterns and facilitates more informed decisions for optimizing transportation services in Singapore.
+
+## 7.0 References
+
+1.  Kam, T. S. (2022). R for Geospatial Data Science and Analytics. Retrieved from <https://r4gdsa.netlify.app.>
+
+2.  Gimond (2023). Chapter 11 Point Pattern Analysis. Retrieved from <https://mgimond.github.io/Spatial/index.html.>
+
+3.  Rey, S.J., Arribas-Bel, D., & Wolf, L.J. (2023). Point Pattern Analysis. In: Geographic Data Science with python. CRC Press.
+
+4.  Moraga, P. Spatial Statistics for Data Science: Theory and Practice with R. Retrieved from <https://www.paulamoraga.com/book-spatial/spatial-point-patterns.html.>
