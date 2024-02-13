@@ -1,0 +1,14 @@
+{
+  "hash": "094bd3bf278ad2411b4229e2b34b3ff2",
+  "result": {
+    "markdown": "---\ntitle: \"In-class Exercise 3: Network Kernel Density Estimation\"\nformat: \n  html:\n    code-fold: true\n    code-summary: \"Show the code\"\n    #toc: false\nexecute: \n  eval: false\n  echo: true\n  freeze: true\n  warning: false\neditor: visual\n---\n\n::: {.cell}\n\n```{.r .cell-code}\npacman::p_load(sf, spNetwork, tmap, classInt, viridis, tidyverse)\n```\n:::\n\n\n##Data Import and Preparation\n\n\n::: {.cell}\n\n```{.r .cell-code}\nnetwork <- st_read(dsn=\"data/geospatial\", \n                   layer=\"Punggol_St\")\n\nchildcare <- st_read(dsn=\"data/geospatial\",\n                     layer=\"Punggol_CC\")\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\ntmap_mode('view') #interactive\ntm_shape(childcare) + \n  tm_dots() + \n  tm_shape(network) +\n  tm_lines()\ntmap_mode('plot')\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nlixels <- lixelize_lines(network, \n                         750, \n                         mindist = 375) \n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nsamples <- lines_center(lixels)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\ndensities <- nkde(network, \n                  events = childcare,\n                  w = rep(1,nrow(childcare)),\n                  samples = samples,\n                  kernel_name = \"quartic\",\n                  bw = 300, \n                  div= \"bw\", \n                  method = \"simple\", \n                  digits = 1, \n                  tol = 1,\n                  grid_shape = c(1,1), \n                  max_depth = 8,\n                  agg = 5, #we aggregate events within a 5m radius (faster calculation)\n                  sparse = TRUE,\n                  verbose = FALSE)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\n#samples$density <- samples$density*1000\n#lixels$density <- lixels$density*1000\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\n#tmap_mode('view')\n#tm_shape(lixels)+\n  #tm_lines(col=\"density \")+\n#tm_shape(childcare)+\n  #tm_dots()\n#tmap_mode('plot')\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

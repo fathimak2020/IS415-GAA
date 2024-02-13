@@ -1,0 +1,13 @@
+---
+title: "Take-home Exercise 2: Application of Spatial and Spatio-temporal Analysis Methods to Discover the Distribution of Dengue Fever in Tainan City, Taiwan [ANALYSIS]"
+execute: 
+  warning: false
+  eval: false
+  freeze: true
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+---
+
+
+global spatial autocorrelation analysis
+local spatial autocorrelation analysis
+emerging hotspot analysis

@@ -1,0 +1,235 @@
+---
+title: "Take-home Exercise 2: Application of Spatial and Spatio-temporal Analysis Methods to Discover the Distribution of Dengue Fever in Tainan City, Taiwan [DATA PREPARATION]"
+execute: 
+  warning: false
+  eval: true
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+---
+
+## 2 Overview
+
+## 2.1 Setting the scene
+
+Dengue Hemorrhagic Fever (commonly known as dengue fever) is a prevalent mosquito-borne disease in tropical and subtropical regions. Caused by the dengue virus transmitted by female Aedes aegypti and Aedes albopictus mosquitoes, it is characterised by acute symptoms. In 2015, Taiwan experienced a severe outbreak, reporting over 43,000 cases and 228 deaths. Subsequently, annual cases remained below 200 until 2023, when Taiwan recorded 26,703 cases, with Tainan City alone reporting over 25,000 cases.
+
+## 2.2 Objectives
+
+The goal is to determine if the distribution of dengue fever outbreaks in Tainan City, Taiwan, is independent spatially and spatio-temporally. If dependencies exist, the focus shifts to identifying clusters, outliers, and emerging hot spots/cold spots to gain insights into the specific spatial and spatio-temporal dynamics of the outbreaks.
+
+The specific objectives of this take-home exercise include the following tasks:
+
+-   Utilise the appropriate functions from the sf and tidyverse packages to prepare a geospatial data layer. This layer should consist of a study area represented by sf polygon features at the village level, confined to the D01, D02, D04, D06, D07, D08, D32, and D39 counties of Tainan City, Taiwan.
+
+-   Generate a dengue fever layer within the specified study area, represented by sf point features. The dengue fever cases should be limited to epidemiology weeks 31-50 in the year 2023.
+
+-   Create a derived dengue fever layer using the spacetime s3 class of sfdep. This layer should include, among other relevant information, a data field indicating the number of dengue fever cases by village and by epidemiology week.
+
+-   Utilise the extracted data to conduct a global spatial autocorrelation analysis.
+
+-   Utilise the extracted data for local spatial autocorrelation analysis.
+
+-   Perform an emerging hotspot analysis using the extracted data.
+
+-   Provide a detailed description of the spatial patterns revealed by the analyses conducted in the previous steps.
+
+## 2 Getting Started
+
+## 2.1 Data Acquisition
+
+The study will utilise the following datasets to explore the distribution of dengue fever outbreaks in Tainan City, Taiwan, with respect to both spatial and spatio-temporal dimensions.
+
++---------------------------------+-------------------+-------------------------------------------------------------------------+-------------------------------------+
+| Dataset                         | Type              | Source                                                                  | Path                                |
++=================================+===================+=========================================================================+=====================================+
+| TAIWAN_VILLAGE_2020             | Geospatial (.shp) | <https://data.gov.tw/en/datasets/130549>                                | data/geospatial/TAIWAN_VILLAGE_2020 |
+|                                 |                   |                                                                         |                                     |
+| Village boundary of Taiwan      |                   |                                                                         |                                     |
++---------------------------------+-------------------+-------------------------------------------------------------------------+-------------------------------------+
+| Dengue_Daily.csv                | Aspatial (.csv)   | <https://data.cdc.gov.tw/en/dataset/dengue-daily-determined-cases-1998> | data/aspatial/Dengue_Daily.csv      |
+|                                 |                   |                                                                         |                                     |
+| Reported dengue cases in Taiwan |                   |                                                                         |                                     |
++---------------------------------+-------------------+-------------------------------------------------------------------------+-------------------------------------+
+
+## **2.2 Importing Relevant R Packages**
+
+The R packages used in this project are:
+
+1.  `dplyr`: for data manipulation
+
+2.  `maptools`: set of tools for reading and manipulating spatial data formats, such as shapefiles
+
+3.  `rgdal`: from CRAN, enables users to import, export, and manipulate spatial data within the R environment
+
+4.  `sf`: for importing, managing, and processing geospatial data
+
+5.  `tidyverse`: a family of other R packages for performing data science tasks such as importing, wrangling, and visualizing data
+
+6.  `tmap`: creating static and interactive maps
+
+7.  `ggplot2`: used for data visualization
+
+8.  `plotly`: interactive graphing library for R
+
+9.  `lubridate`: for working with date-time data
+
+Pacman assists us by helping us load R packages that we require.
+
+```{r}
+pacman::p_load(dplyr,maptools, rgdal,sf, sp, tidyverse, tmap, ggplot2, plotly, lubridate)
+
+```
+
+## 2.3 Importing Geospatial Datasets
+
+### 2.3.1 Village Boudary of Taiwan
+
+For shapefile format, two arguments are required: `dsn` to define the data path, and `layer` to provide the shapefile name. 
+
+```{r}
+tainan_sf <- st_read(dsn = "data/geospatial", 
+                layer = "TAINAN_VILLAGE")
+```
+
+We see that the CRS is TWD 97; let's verify whether it has been assigned the accurate EPSG code as well.
+
+```{r}
+st_crs(tainan_sf)
+```
+
+The correct EPSG for TWD 97 is 3826, and it has been inaccurately assigned. Let's assign the correct EPSG code.
+
+```{r}
+tainan_sf <- st_set_crs(tainan_sf, 3826)
+st_crs(tainan_sf)
+```
+
+::: callout-important
+**Project Transformation**
+
+The imported data has been assigned the EPSG code 3826 for TWD 97 using **`st_set_crs`**.
+:::
+
+```{r}
+par(mar = c(0,0,0,0))
+plot(st_geometry(tainan_sf))
+```
+
+We use `head()` to gather more information about the dataset.
+
+```{r}
+head(tainan_sf)
+```
+
+In the dataset, county IDs are contained in a column named `TOWNID`. Our focus is on the counties with the IDs D01, D02, D04, D06, D07, D08, D32, and D39. The provided code snippet utilises the `subset` function to extract the relevant counties from the `tainan_sf` dataset, and these selected rows are then stored in a new dataframe named `counties`.
+
+```{r}
+d01 <- subset(tainan_sf, tainan_sf$TOWNID == "D01")
+d02 <- subset(tainan_sf, tainan_sf$TOWNID == "D02")
+d04 <- subset(tainan_sf, tainan_sf$TOWNID == "D04")
+d06 <- subset(tainan_sf, tainan_sf$TOWNID == "D06")
+d07 <- subset(tainan_sf, tainan_sf$TOWNID == "D07")
+d08 <- subset(tainan_sf, tainan_sf$TOWNID == "D08")
+d32 <- subset(tainan_sf, tainan_sf$TOWNID == "D32")
+d39 <- subset(tainan_sf, tainan_sf$TOWNID == "D39")
+```
+
+```{r}
+counties <- dplyr::bind_rows(list(d01, d02, d04, d06, d07, d08, d32, d39))
+```
+
+Let\`s check if `counties` has been assigned the correct EPSG.
+
+```{r}
+st_crs(counties)
+```
+
+The correct EPSG for TWD 97 is 3826, and it has been inaccurately assigned. Let's assign the correct EPSG code.
+
+```{r}
+counties_sf <- st_transform(counties, st_crs(3826))
+```
+
+We visualise our study area using `tmap` and apply a color code based on the county ID.
+
+```{r}
+tmap_mode('plot')
+tm_shape(counties_sf) + 
+  tm_polygons("TOWNID") 
+```
+
+::: callout-tip
+✅ Task Complete! We have obtained the counties of interest as the study area.
+:::
+
+## 2.4 Importing Aspatial Dataset
+
+### 2.4.1 Dengue Cases
+
+```{r}
+dengue <- read_csv("data/aspatial/Dengue_Daily.csv")
+```
+
+We use `head()` to gather more information about the dataset.
+
+```{r}
+head(dengue)
+```
+
+We must retrieve epidemiological data for weeks 31-50 of the year 2023 from this dataset. We can utilise the `lubridate` package. Then we will choose the necessary columns, rename them, and save the results in a new dataframe named dengue_clean.
+
+The columns to be selected and renamed are:
+
+-   發病日: Onset date
+
+-   最小統計區中心點X: x-coordinate
+
+-   最小統計區中心點Y: y-coordinate
+
+Simultaneously, any missing values will be eliminated. Cells containing missing values are denoted by the word 'none'. So, we will filter out rows where X_coordinate is not equal to 'none' and Y_coordinate is not equal to 'none' to eliminate missing values.
+
+```{r}
+dengue_clean <- dengue %>%
+  filter(between(week(as.Date(發病日)), 31, 50) & year(as.Date(發病日)) == 2023) %>%
+  select(
+    Onset_date = 發病日,
+    X_coordinate = 最小統計區中心點X,
+    Y_coordinate = 最小統計區中心點Y
+  ) %>%
+  filter(X_coordinate != 'None' & Y_coordinate != 'None')
+```
+
+Now, we will convert `dengue_clean` to an sf object by assigning the appropriate CRS.
+
+```{r}
+dengue_sf <- st_as_sf(dengue_clean,
+                      coords = c("X_coordinate", "Y_coordinate"),
+                      crs = 4326) %>%
+  st_transform(crs = 3826)
+```
+
+We need to identify which points from the `dengue_sf` object intersect with our study area defined by the `counties_sf`.
+
+```{r}
+# | eval: false
+dengue_counties <- st_intersection(dengue_sf, counties_sf)
+
+```
+
+```{r}
+#write_rds(dengue_counties, "data/rds/dengue_counties.rds")
+dengue_counties <- read_rds("data/rds/dengue_counties.rds")
+```
+
+Let's plot and visualise these points on a map.
+
+```{r}
+tm_shape(counties_sf) +
+  tm_polygons("TOWNID") +
+tm_shape(dengue_counties) +
+  tm_symbols(size = 0.02, col = "black")
+
+```
+
+::: callout-tip
+✅ Task Complete! We have extracted a dengue fever layer within the study area.
+:::

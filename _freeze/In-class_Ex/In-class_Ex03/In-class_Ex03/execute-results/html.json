@@ -1,0 +1,14 @@
+{
+  "hash": "685eeec7306ad2f4000e6073052b9488",
+  "result": {
+    "markdown": "---\ntitle: \"In-class Exercise 3: Kernel Density Estimation\"\nformat: \n  html:\n    code-fold: true\n    code-summary: \"Show the code\"\n    #toc: false\nexecute: \n  eval: false\n  echo: true\n  freeze: true\n  warning: false\neditor: visual\n---\n\n\n## Installing Maptools\n\n\n::: {.cell}\n\n```{.r .cell-code}\ninstall.packages(\"maptools\", repos = \"https://packagemanager.posit.co/cran/2023-10-13\")\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\npacman::p_load(maptools, sf, raster, spatstat, tmap, tidyverse)\n```\n:::\n\n\n##Spatial Data Wrangling\n\n\n::: {.cell}\n\n```{.r .cell-code}\nchildcare_sf <- st_read(\"data/geospatial/ChildCareServices.geojson\")%>%\n  st_transform(crs = 3414)\nmpsz_sf <- st_read(dsn= \"data/geospatial\",\n                   layer = \"MP14_SUBZONE_WEB_PL\")\n```\n:::\n\n::: {.cell}\n\n:::\n\n\n## creating costal outline\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsg_sf <- mpsz_sf %>%\n  st_union()\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nplot(sg_sf)\n```\n:::\n\n\n## Importing the spatial\n\n## Mapping the geospaital\n\n## Geospatial Data wrangling\n\n## creating PPP object: sf method\n\n\n::: {.cell}\n\n```{.r .cell-code}\nchildcare_ppp <- as.ppp(childcare_sf)\n#as.ppp is only for sf layer not sp\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nsummary(childcare_ppp)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nplot(childcare_ppp)\n```\n:::\n\n\n## Handling duplicated data\n\n\n::: {.cell}\n\n```{.r .cell-code}\nany(duplicated(childcare_ppp))\n```\n:::\n\n\n## Creating owin object\n\n\n::: {.cell}\n\n```{.r .cell-code}\nsg_owin <- as.owin(sg_sf)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nchildcareSG_ppp = childcare_ppp[sg_owin]\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nsummary(childcareSG_ppp)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\npg <- mpsz_sf %>% filter(PLN_AREA_N == \"PUNGGOL\")\ntm <- mpsz_sf %>% filter(PLN_AREA_N == \"TAMPINES\")\nck <- mpsz_sf %>% filter(PLN_AREA_N == \"CHOA CHU KANG\")\njw <- mpsz_sf %>% filter(PLN_AREA_N == \"JURONG WEST\")\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nplot (pg, main =\"Ponggol\")\nplot (tm, main =\"Tampines\")\nplot (ck, main =\"Choa Chu Kang\")\nplot (jw, main =\"Jurong West\")\n```\n:::\n\n\n## Combining point\n\n## First-order spatal\n\n## Kernel Density Estimation\n\n## Computing kernel\n\n## Rescaling KDE\n\n## working with different\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}

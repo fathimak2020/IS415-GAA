@@ -1,0 +1,14 @@
+{
+  "hash": "06398343e7c49a7c1ac8868773caf7f5",
+  "result": {
+    "markdown": "---\ntitle: \"In-class Exercise 5: Global and Local Measures of Spatial Autocorrelation\"\nexecute: \n  warning: false\n  eval: false\n  freeze: true\ndate: \"2024-02-13\"\n---\n\n::: {.cell}\n\n```{.r .cell-code}\npacman::p_load(sf,sfedp, tmap, tidyverse)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nhunan <- st_read(dsn = \"data/geospatial\", \n                 layer = \"Hunan\")\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nhunan2012 <- read_csv(\"data/aspatial/Hunan_2012.csv\")\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nhunan <- left_join(hunan,hunan2012) %>%\n  select(1:4, 7, 15)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\ntmap_mode(\"plot\")\ntm_shape(hunan_GDPPC)+\n  tm_fill(\"GDPPC\", \n          style = \"quantile\",\n          platte = \"Blues\",\n          title = \"GDPPC\") +\n  tm_layout(main.title = \"Distribution of GDP per capita by county, Hunan province\"\n            main.title.position = \"center\",\n            main.title.size = 1.2,\n            legenf.height = 0.45,\n            legend,widht = 0.35,\n            frame = TRUE) +\n  tm_borders(alpha = 0.5) +\n  tm_compass(type = \"8star\", size = 2) +\n  tm_scale_bar() +\n  tm_grid(alpha = 0.2)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nwm_q <- hunan_GDPPC %>%\n  mutate(nb = st_contiguinity(geometry),\n         wt = st_weights(nb,\n                         style = \"w\"),\n         .before= 1)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nset.seed(1234)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nglobal_moran_perm(wm_q$GDPPC,\n                  wm_q$nb,\n                  wm_q$wt,\n                  nsim = 99)\n```\n:::\n",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
