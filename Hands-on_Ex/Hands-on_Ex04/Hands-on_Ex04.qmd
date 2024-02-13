@@ -2,6 +2,7 @@
 title: "Hands-on Exercise 4: Spatial Weights and Applications"
 execute: 
   warning: false
+  freeze: true
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 ---
 

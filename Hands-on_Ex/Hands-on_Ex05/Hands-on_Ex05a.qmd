@@ -2,6 +2,7 @@
 title: "Hands-on Exercise 5: Global Measures of Spatial Autocorrelation"
 execute: 
   warning: false
+  freeze: true
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 ---
 

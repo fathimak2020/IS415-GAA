@@ -6,8 +6,9 @@ format:
     code-summary: "Show the code"
     #toc: false
 execute: 
-  eval: true
+  eval: false
   echo: true
+  freeze: true
   warning: false
 editor: visual
 ---

@@ -3,6 +3,7 @@ title: "In-class Exercise 5: Global and Local Measures of Spatial Autocorrelatio
 execute: 
   warning: false
   eval: false
+  freeze: true
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 ---
 

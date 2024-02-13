@@ -8,6 +8,7 @@ format:
 execute: 
   eval: false
   echo: true
+  freeze: true
   warning: false
 editor: visual
 ---
@@ -39,6 +40,7 @@ basemap <- tm_shape(hunan) +
 gdppc <- qtm(hunan, "GDPPC") #qtm is a faster way to plot maps 
 tmap_arrange(basemap, gdppc, asp=1, ncol=2) #organise both maps into 1 row 2 columns
 ```
+
 ```{r}
 plot(hunan$geometry, border="lightgrey")
 plot(wm_q, coords, pch = 19, cex = 0.6, add = TRUE, col= "red")
@@ -58,7 +60,6 @@ hunan_sp <-hunan %>%
            #    longlat = T)
 ```
 
-
 ```{r}
 wm_q <- poly2nb(hunan, queen =TRUE)
 summary(wm_q)
@@ -66,6 +67,7 @@ summary(wm_q)
 #1st row is no of neighbors
 #2nd row is no of geographical areas
 ```
+
 ```{r}
 longitude <- map_dbl(hunan$geometry, ~st_centroid(.x)[[1]])
 latitude <- map_dbl(hunan$geometry, ~st_centroid(.x)[[2]])
@@ -101,7 +103,6 @@ rswm_q <- nb2listw(wm_q, style="W", zero.policy = TRUE)
 rswm_q
 ```
 
-
 ```{r}
 b_weights <- lapply(wm_q, function(x) 0*x + 1)
 b_weights2 <- nb2listw(wm_q, 
@@ -109,6 +110,7 @@ b_weights2 <- nb2listw(wm_q,
                        style = "B")
 b_weights2
 ```
+
 ```{r}
 lag_sum <- list(hunan$NAME_3, lag.listw(b_weights2, hunan$GDPPC))
 lag.res <- as.data.frame(lag_sum)
@@ -118,6 +120,7 @@ colnames(lag.res) <- c("NAME_3", "lag_sum GDPPC")
 ```{r}
 hunan <- left_join(hunan, lag.res)
 ```
+
 ```{r}
 gdppc <- qtm(hunan, "GDPPC")
 lag_sum_gdppc <- qtm(hunan, "lag_sum GDPPC")

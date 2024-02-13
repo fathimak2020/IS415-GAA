@@ -58,7 +58,7 @@ By this exercise, I will:
 The study will utilise the following datasets to explore spatial point patterns analysis methods and reveal the geographical and spatio-temporal distribution of Grab hailing services locations in Singapore.
 
 | Dataset Name                               | Type                | Source                                                              | Path                                     |
-|-----------------|-----------------|-----------------------|-----------------|
+|--------------------------------------------|---------------------|---------------------------------------------------------------------|------------------------------------------|
 | Grab-Posisi                                | Aspatial (.parquet) | <https://engineering.grab.com/grab-posisi>                          | data/aspatial/grabPosisi                 |
 | Master Plan 2019 Subzone Boundary (No Sea) | Geospatial (.shp)   | <https://beta.data.gov.sg/collections/2104/view>                    | data/geospatial/MPSZ-2019                |
 | Open Street Map Road Data                  | Geospatial (.shp)   | <https://download.geofabrik.de/asia/malaysia-singapore-brunei.html> | data/geospatial/OSM/gis_osm_roads_free_1 |

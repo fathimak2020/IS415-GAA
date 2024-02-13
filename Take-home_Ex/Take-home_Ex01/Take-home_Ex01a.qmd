@@ -2,6 +2,7 @@
 title: "Take-home Exercise 1a [DATA PREPARATION]: Application of Spatial Point Patterns Analysis to Discover the Geographical Distribution of Grab Hailing Services in Singapore"
 execute: 
   warning: false
+  eval: false
   freeze: true
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 ---
@@ -658,4 +659,4 @@ grab_dest_ppp_sg_km <- read_rds("data/rds/grab_dest_ppp_sg_km.rds")
 We'll save the output in .rds file format to save loading time.
 :::
 
-> [**Proceed to Take-home Exercise 1b: Analysis**](Take-home_Ex/Take-home_Ex01/Take-home_Ex01b.html)
+> [**Proceed to Take-home Exercise 1b: Analysis**](https://is415-gaa-fathima.netlify.app/take-home_ex/take-home_ex01/take-home_ex01b)

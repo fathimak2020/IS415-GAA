@@ -6,9 +6,10 @@ format:
     code-summary: "Show the code"
     #toc: false
 execute: 
-  eval: true
+  eval: false
   echo: true
   warning: false
+  freeze: true
 editor: visual
 ---
 
@@ -16,12 +17,12 @@ editor: visual
 
 ## Load R packages
 
-In this in-class exercise, the following R packages will be used: 
+In this in-class exercise, the following R packages will be used:
 
 -   `arrow` to read Parquet files
--   `lubridate` for working with date-time data 
+-   `lubridate` for working with date-time data
 -   tidyverse
--   `tmap` for interactive maps 
+-   `tmap` for interactive maps
 -   sf
 
 ```{r}
@@ -45,11 +46,10 @@ The field 'pingtimestamp' is not in proper date-time format. The following code 
 df$pingtimestamp <- as_datetime(df$pingtimestamp)
 ```
 
-
 ## Extracting trips starting locations
 
-- extract trips origin locations
-- derive new columns : weekday, starting hour and day of month
+-   extract trips origin locations
+-   derive new columns : weekday, starting hour and day of month
 
 ```{r}
 #| eval: false
@@ -66,8 +66,8 @@ origin_df <- df %>%
 
 ## Extracting trips ending locations
 
-- extract trips destination locations
-- derive new columns: weekday, ending hour and day of month 
+-   extract trips destination locations
+-   derive new columns: weekday, ending hour and day of month
 
 ```{r}
 #| eval: false
@@ -82,7 +82,6 @@ dest_df <- df %>%
         day = factor(mday(pingtimestamp))) #to change to ordinal scale
 ```
 
-
 ```{r}
 #| echo: false
 #| eval: false
@@ -92,7 +91,7 @@ write_rds(origin_df,"data/rds/origin_df.rds")
 write_rds(dest_df,"data/rds/dest_df.rds")
 ```
 
-#Import Data for future use 
+#Import Data for future use
 
 ```{r}
 #origin_df <-read_rds(data/rds/origin_df.rds)
@@ -106,7 +105,3 @@ write_rds(dest_df,"data/rds/dest_df.rds")
 # Visualising as point symbol map
 
 # Importing Masterplan 2019 Planning Subzone Boundary
-
-
-
-

@@ -2,6 +2,7 @@
 title: "In-class Exercise 1"
 execute: 
   warning: false
+  eval: false
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 ---
 

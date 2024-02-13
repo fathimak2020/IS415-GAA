@@ -2,6 +2,7 @@
 title: "Take-home Exercise 1b [ANALYSIS]: Application of Spatial Point Patterns Analysis to Discover the Geographical Distribution of Grab Hailing Services in Singapore"
 execute: 
   warning: false
+  eval: false
   freeze: true
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 ---
@@ -367,96 +368,6 @@ plot(wd_kde_scott,main = "KDE Woodlands")
 ```
 
 Now, identifying clusters within each planning area is easily achievable. However, pinpointing the exact locations of these clusters requires the incorporation of road networks for each planning area. To achieve this precision, we will leverage a more advanced KDE technique known as Network Kernel Density Estimation (NKDE) in the upcoming sections. This approach will provide deeper insights into the specific roads or areas within each planning area that host these clusters.
-
-### 4.2.8 Nearest Neighbour Analysis
-
-Nearest Neighbor Analysis helps assess whether the observed spatial pattern is clustered, dispersed, or random.
-
-Here we will be using the Clark-Evans Test of Aggregation.
-
-### 4.2.8.1 Clark-Evans Test of Aggregation
-
-Here, we will perform the Clark-Evans test of aggregation for a spatial point pattern by using [*clarkevans.test()*](https://www.rdocumentation.org/packages/spatstat/versions/1.63-3/topics/clarkevans.test) of **statspat**.
-
-### 4.2.8.1.1 Origin Points in Jurong East
-
-The test hypotheses are:
-
--   H~0~ = The distribution of origin points in Jurong East are randomly distributed
-
--   H~1~= The distribution of origin points in Jurong East are not randomly distributed
-
-The 95% confident interval will be used.
-
-```{r}
-clarkevans.test(origin_je_ppp,
-                correction="none",
-                clipregion="sg_owin",
-                alternative=c("clustered"),
-                nsim=99)
-```
-
-We can conclude that the distribution of origin points in Jurong East is **not randomly distributed**
-
-### 4.2.8.1.2 Origin Points in Tampines
-
-The test hypotheses are:
-
--   H~0~ = The distribution of origin points in Tampines are randomly distributed
-
--   H~1~= The distribution of origin points in Tampines are not randomly distributed
-
-The 95% confidence interval will be used.
-
-```{r}
-clarkevans.test(origin_tm_ppp,
-                correction="none",
-                clipregion="sg_owin",
-                alternative=c("clustered"),
-                nsim=99)
-```
-
-We can conclude that the distribution of origin points in Tampines is **not randomly distributed**
-
-### 4.2.8.1.3 Origin Points in Choa Chu Kang
-
-The test hypotheses are:
-
--   H~0~ = The distribution of origin points in Choa Chu Kang are randomly distributed
-
--   H~1~= The distribution of origin points in Choa Chu Kang are not randomly distributed
-
-The 95% confidence interval will be used.
-
-```{r}
-clarkevans.test(origin_ck_ppp,
-                correction="none",
-                clipregion="sg_owin",
-                alternative=c("clustered"),
-                nsim=99)
-```
-
-We can conclude that the distribution of origin points in Choa Chu Kang is **not randomly distributed**
-
-### 4.2.8.1.4 Origin Points in Woodlands
-
-The test hypotheses are:
-
--   H~0~ = The distribution of origin points in Woodlands are randomly distributed
-
--   H~1~= The distribution of origin points in Woodlands are not randomly distributed
-
-The 95% confidence interval will be used.
-
-```{r}
-clarkevans.test(origin_wd_ppp,
-                correction="none",
-                clipregion="sg_owin",
-                alternative=c("clustered"),
-                nsim=99)
-```
-
-We can conclude that the distribution of origin points in Woodlands is **not randomly distributed**
 
 ## **5.0 Network Constrained Kernel Density Estimation (NKDE)**
 
