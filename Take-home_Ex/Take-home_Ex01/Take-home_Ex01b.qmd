@@ -68,10 +68,13 @@ kde_grab_origin_sg_bw <- density(grab_origin_ppp_sg_km,
 ```
 
 ```{r}
+#| eval: false
 par(mar = c(1,1,1,1))
 plot(kde_grab_origin_sg_bw,main = "KDE Automatic Bandwidth for Origin Points")
 
 ```
+
+![](images/image%2014.png){fig-align="center"}
 
 ```{r}
 kde_grab_dest_sg_bw <- density(grab_dest_ppp_sg_km,
@@ -82,9 +85,12 @@ kde_grab_dest_sg_bw
 ```
 
 ```{r}
+#| eval: false
 par(mar = c(1,1,1,1))
 plot(kde_grab_dest_sg_bw,main = "KDE Automatic Bandwidth for Destination Points")
 ```
+
+![](images/image%2015.png){fig-align="center"}
 
 ### 4.2.1.1 Other Bandwidth Selection Methods
 
@@ -93,6 +99,7 @@ Additionally we can choose from a series of options for 'kernel' which is the sm
 -   [`bw.diggle()`](https://search.r-project.org/CRAN/refmans/spatstat.explore/html/bw.diggle.html) Cross Validated Bandwidth Selection for Kernel Density
 
 ```{r}
+#| eval: false
 bw_diggle <- bw.diggle(grab_origin_ppp_sg_km)
 bw_diggle
 ```
@@ -100,6 +107,7 @@ bw_diggle
 -   [`bw.CvL()`](https://search.r-project.org/CRAN/refmans/spatstat.explore/html/bw.CvL.adaptive.html) Cronie and Van Lieshout’s Criterion for Bandwidth Selection for Kernel Density
 
 ```{r}
+#| eval: false
 bw_CvL <- bw.CvL(grab_origin_ppp_sg_km)
 bw_CvL
 ```
@@ -107,6 +115,7 @@ bw_CvL
 -   [`bw.scott()`](https://www.rdocumentation.org/packages/spatstat/versions/1.64-1/topics/bw.scott) Scott’s Rule for Bandwidth Selection for Kernel Density
 
 ```{r}
+#| eval: false
 bw_scott <- bw.scott(grab_origin_ppp_sg_km)
 bw_scott
 ```
@@ -114,6 +123,7 @@ bw_scott
 -   [`bw.ppl()`](https://search.r-project.org/CRAN/refmans/spatstat.explore/html/bw.pplHeat.html) Likelihood Cross Validation Bandwidth Selection for Kernel Density
 
 ```{r}
+#| eval: false
 bw_ppl <- bw.ppl(grab_origin_ppp_sg_km)
 bw_ppl
 ```
@@ -121,11 +131,14 @@ bw_ppl
 Let's plot to compare the output of each method, so that we can see the distinct differences in KDE layers .
 
 ```{r}
-kde_diggle <- density(grab_origin_ppp_sg_km, bw_diggle)
-kde_CvL <- density(grab_origin_ppp_sg_km, bw_CvL)
-kde_scott <- density(grab_origin_ppp_sg_km, bw_scott)
-kde_ppl <- density(grab_origin_ppp_sg_km, bw_ppl)
+kde_diggle <- density(grab_origin_ppp_sg_km, 0.008098505 )
+kde_CvL <- density(grab_origin_ppp_sg_km, 3.147573)
+kde_scott <- density(grab_origin_ppp_sg_km, 1.5925974,0.9389125)
+kde_ppl <- density(grab_origin_ppp_sg_km, 0.1238747)
+```
 
+```{r}
+#| eval: false
 par(mfrow = c(2,2), mar = c(1,1,1,1))
 plot(kde_diggle,main = "KDE diggle")
 plot(kde_CvL,main = "KDE CvL")
@@ -133,11 +146,14 @@ plot(kde_scott,main = "KDE Scott")
 plot(kde_ppl,main = "KDE ppl")
 ```
 
+![](images/image%2016.png){fig-align="center"}
+
 > From first glance, it looks as though `KDE Scott` shows the best resuts with the clearest peaks.
 >
 > But in order to pick the most suitable method for our analysis, we need to compare the distribution of KDE values. We can do so simply by visualising the distribution using histograms. Let's check again `KDE Scott` shows the most ideal result.
 
 ```{r}
+#| eval: false
 par(mfrow = c(2,2),mar = c(3,3,3,3))
 hist(kde_diggle,main = "KDE diggle")
 abline(v=50, 
@@ -153,6 +169,8 @@ abline(v=50,
        col="red")
 ```
 
+![](images/image%2017.png){fig-align="center"}
+
 ### 4.2.1.2 Choosing the Most Appropriate KDE Selection Method
 
 > Looking at the histograms, the one for `bw_scott()` shows that it has a broad spread as compared to the others and does not peak which means there is an even distribution of points across all bins. Therefore we will pick `bw_scott()`.
@@ -162,8 +180,14 @@ abline(v=50,
 Here, we manually specify a fixed bandwidth value for the KDE layer. This allows us to control the level of smoothing applied to the point pattern. We will plot using `bw_scott()`as identified previously as the most suitable method.
 
 ```{r}
+#| eval: false
 fixed_bw_scott <- bw.scott(grab_origin_ppp_sg_km)
 fixed_bw_scott
+```
+
+```{r}
+#write_rds(fixed_bw_scott, "data/rds/fixed_bw_scott.rds")
+fixed_bw_scott <- read_rds("data/rds/fixed_bw_scott.rds")
 ```
 
 The values returned are 1.59 and 0.94 for sigma.x and sigma.y respectively.
@@ -171,10 +195,17 @@ The values returned are 1.59 and 0.94 for sigma.x and sigma.y respectively.
 Then, we plot to visualise the fixed bandwidth using `bw_scott`
 
 ```{r}
-kde_fixed_bw_scott <- density(grab_origin_ppp_sg_km, fixed_bw_scott)
+kde_fixed_bw_scott <- density(grab_origin_ppp_sg_km, 1.5925974,0.9389125)
+
+```
+
+```{r}
+#| eval: false
 par(mar = c(1,1,1,1))
 plot(kde_fixed_bw_scott, main ='Scott Method Fixed Bandwidth KDE for Origin Points')
 ```
+
+![](images/image%2018.png){fig-align="center"}
 
 ### 4.2.3 Different Kernel Function Selection Methods for Fixed Bandwidth
 
@@ -204,19 +235,20 @@ kde_fixed_scott_disc <- density(grab_origin_ppp_sg_km,
                           sigma=fixed_bw_scott, 
                           edge=TRUE, 
                           kernel="disc")
-         
-
 ```
 
 Let's visualise the different kernel methods.
 
 ```{r}
+#| eval: false
 par(mfrow = c(2,2), mar = c(2,2,2,2))
 plot(kde_fixed_bw_scott_gaussian, main="Gaussian")
 plot(kde_fixed_bw_scott_epanechnikov, main="Epanechnikov")
 plot(kde_fixed_bw_scott_quartic, main="Quartic")
 plot(kde_fixed_scott_disc,main="Disc")
 ```
+
+![](images/image%2019.png){fig-align="center"}
 
 There are subtle differences in the smoothness and dispersion among the four plots, but they collectively show the same pattern in the end.
 
@@ -225,7 +257,13 @@ There are subtle differences in the smoothness and dispersion among the four plo
 Here, we use the most common adaptive bandwidth method called Adaptive Kernel Density Estimate.
 
 ```{r}
+#| eval: false
 kde_adaptive <- adaptive.density(grab_origin_ppp_sg_km, method="kernel")
+```
+
+```{r}
+#write_rds(kde_adaptive, "data/rds/kde_adaptive.rds")
+kde_adaptive <- read_rds("data/rds/kde_adaptive.rds")
 ```
 
 ### 4.2.4 Comparing Fixed and Adaptive Bandwidth
@@ -233,10 +271,13 @@ kde_adaptive <- adaptive.density(grab_origin_ppp_sg_km, method="kernel")
 Let's do a side-by-side comparision of fixed bandwidth and adaptive bandwidth method .
 
 ```{r}
+#| eval: false
 par(mfrow=c(1,2), mar = c(3,3,3,3))
 plot(kde_fixed_bw_scott_gaussian, main = "Fixed bandwidth")
 plot(kde_adaptive, main = "Adaptive bandwidth")
 ```
+
+![](images/image%2020.png){fig-align="center"}
 
 > The fixed bandwidth method makes it easier to identify areas of higher origin point clusters
 
@@ -265,11 +306,12 @@ projection(kde_adaptive_kernel_raster) <- CRS("+init=EPSG:3414 +units=km")
 Finally, we can visualise our Kernel Density Maps on OpenStreetMap
 
 ```{r}
+red_palette <- colorRampPalette(c("lightpink", "darkred"))
 tmap_mode('view')
 kde_fixed_bw_scott_map <- tm_basemap("OpenStreetMap") +
   tm_view(set.zoom.limits=c(10, 15)) +
   tm_shape(kde_fixed_bw_scott_raster) +
-  tm_raster(alpha = 0.65, title = "KDE_Fixed_Scott", palette = brewer.pal(12, "Set3")) +
+  tm_raster(alpha = 0.65, title = "KDE_Fixed_Scott", palette = red_palette(12)) +
   tm_shape(mpsz_sf)+
   tm_polygons(alpha=0.1, id="PLN_AREA_N")+
   tmap_options(check.and.fix = TRUE)+
@@ -283,7 +325,7 @@ tmap_mode('view')
 kde_adaptive_kernel_map <- tm_basemap("OpenStreetMap") +
   tm_view(set.zoom.limits=c(10, 15)) +
   tm_shape(kde_adaptive_kernel_raster) +
-  tm_raster(alpha = 0.65, title = "KDE_Adaptive_Kernel", palette = brewer.pal(12, "Set3")) +
+  tm_raster(alpha = 0.65, title = "KDE_Adaptive_Kernel", palette = red_palette(12)) +
   tm_shape(mpsz_sf)+
   tm_polygons(alpha=0.1, id="PLN_AREA_N")+
   tmap_options(check.and.fix = TRUE)+
@@ -330,12 +372,15 @@ wd = mpsz_sf%>%
 ### 4.2.7.1 Plotting Target Planning Areas
 
 ```{r}
+#| eval: false
 par(mfrow=c(2,2))
 plot(st_geometry(je), main = "Jurong East")
 plot(st_geometry(tm), main = "Tampines")
 plot(st_geometry(ck), main = "Choa Chu Kang")
 plot(st_geometry(wd), main = "Woodlands")
 ```
+
+![](images/image%2021.png){fig-align="center"}
 
 Next, we will create `owin` objects to represent the observation windows for respective planning area.
 
@@ -358,14 +403,18 @@ je_kde_scott <- density(origin_je_ppp, sigma=bw.scott, main="Jurong East")
 tm_kde_scott <- density(origin_tm_ppp, sigma=bw.scott, main="Tampines")
 ck_kde_scott <- density(origin_ck_ppp, sigma=bw.scott, main="Choa Chu Kang")
 wd_kde_scott <- density(origin_wd_ppp, sigma=bw.scott, main="Woodlands")
+```
 
-
+```{r}
+#| eval: false
 par(mfrow = c(2,2))
 plot(je_kde_scott,main = "KDE Jurong East")
 plot(tm_kde_scott,main = "KDE Tampines")
 plot(ck_kde_scott,main = "KDE Choa Chu Kang")
 plot(wd_kde_scott,main = "KDE Woodlands")
 ```
+
+![](images/image%2022.png){fig-align="center"}
 
 Now, identifying clusters within each planning area is easily achievable. However, pinpointing the exact locations of these clusters requires the incorporation of road networks for each planning area. To achieve this precision, we will leverage a more advanced KDE technique known as Network Kernel Density Estimation (NKDE) in the upcoming sections. This approach will provide deeper insights into the specific roads or areas within each planning area that host these clusters.
 
@@ -462,6 +511,7 @@ Finally we use the `nkde` function from `spNetwork` to get the NKDE. There are s
 -   `verbose`: suppresses verbose output during the process
 
 ```{r}
+#| eval: false
 je_density <- nkde(je_roads, 
                   events = je_origin,
                   w = rep(1,nrow(je_origin)),
@@ -527,6 +577,20 @@ wd_density <- nkde(wd_roads,
                   verbose = FALSE)
 ```
 
+```{r}
+#write_rds(je_density, "data/rds/je_density.rds")
+je_density <- read_rds("data/rds/je_density.rds")
+
+#write_rds(tm_density, "data/rds/tm_density.rds")
+tm_density <- read_rds("data/rds/tm_density.rds")
+
+#write_rds(ck_density, "data/rds/ck_density.rds")
+ck_density <- read_rds("data/rds/ck_density.rds")
+
+#write_rds(wd_density, "data/rds/wd_density.rds")
+wd_density <- read_rds("data/rds/wd_density.rds")
+```
+
 We are also required to join the density values into the samples and lixels objects. The obtained densities will be scaled by the total number of origin points and we will multiply by 1000 for km measurement.
 
 ```{r}
@@ -553,7 +617,7 @@ Let's plot the NKDE map for each planning area.
 tmap_mode('view')
 je_density_map <- tm_basemap("OpenStreetMap") +
 tm_shape(je_lixels)+
-  tm_lines(col ="density", lwd = 3, palette = brewer.pal(12, "Set3"))+
+  tm_lines(col ="density", lwd = 3, palette = red_palette(12))+
 tm_shape(je_origin)+
   tm_dots(size=0.05)+
   tm_layout(title = "Jurong East NKDE")
@@ -563,7 +627,7 @@ tmap_leaflet(je_density_map)
 ::: callout-note
 **Analysis**
 
-In Jurong East, notable clusters of taxi pick-up points have been observed around Yuhua Place, Yuhua Senior Activity Center, New Jurong Polyclinic, and the nursing home vicinity. Additionally, clusters are prevalent near Parc Oasis, Singtel, Zai Shun Seafood, in proximity to Toh Guan, Westgate, Shen Hong Temple, Jurong East Interchange, IMM, Yuhua Primary School, and Crest Secondary School.
+In Jurong East, notable clusters of Grab pick-up points have been observed around Yuhua Place, Yuhua Senior Activity Center, New Jurong Polyclinic, and the nursing home vicinity. Additionally, clusters are prevalent near Parc Oasis, Singtel, Zai Shun Seafood, in proximity to Toh Guan, Westgate, Shen Hong Temple, Jurong East Interchange, IMM, Yuhua Primary School, and Crest Secondary School.
 
 This clustering phenomenon may be attributed to
 
@@ -590,7 +654,7 @@ This clustering phenomenon may be attributed to
 tmap_mode('view')
 tm_density_map <- tm_basemap("OpenStreetMap") +
 tm_shape(tm_lixels)+
-  tm_lines(col ="density", lwd = 3, palette = brewer.pal(12, "Set3"))+
+  tm_lines(col ="density", lwd = 3, palette = red_palette(12))+
 tm_shape(tm_origin)+
   tm_dots(size=0.05)+
   tm_layout(title = "Tampines NKDE")
@@ -624,7 +688,7 @@ This clustering phenomenon may be attributed to
 tmap_mode('view')
 ck_density_map <- tm_basemap("OpenStreetMap") +
 tm_shape(ck_lixels)+
-  tm_lines(col ="density", lwd = 3, palette = brewer.pal(12, "Set3"))+
+  tm_lines(col ="density", lwd = 3, palette = red_palette(12))+
 tm_shape(ck_origin)+
   tm_dots(size=0.05)+
   tm_layout(title = "Choa Chu Kang NKDE")
@@ -659,7 +723,7 @@ This clustering phenomenon may be attributed to
 tmap_mode('view')
 wd_density_map <- tm_basemap("OpenStreetMap") +
 tm_shape(wd_lixels)+
-  tm_lines(col ="density", lwd = 3, palette = brewer.pal(12, "Set3"))+
+  tm_lines(col ="density", lwd = 3, palette = red_palette(12))+
 tm_shape(wd_origin)+
   tm_dots(size=0.05)+
   tm_layout(title = "Woodlands NKDE")
@@ -667,7 +731,9 @@ tmap_leaflet(wd_density_map)
 ```
 
 ::: callout-note
-In Woodlands, distinct clusters of taxi pick-up points have been identified around Innova Junior College, Singapore Sports School, Civic Centre, STELLAR\@TE2, Singapore Turf Club, Old Woodlands Town Centre, Masjid An Nur, Woodlands Cinema, Greenwood Primary School, and Mega\@Woodlands.
+**Analysis**
+
+In Woodlands, distinct clusters of Grab pick-up points have been identified around Innova Junior College, Singapore Sports School, Civic Centre, STELLAR\@TE2, Singapore Turf Club, Old Woodlands Town Centre, Masjid An Nur, Woodlands Cinema, Greenwood Primary School, and Mega\@Woodlands.
 
 This clustering phenomenon may be attributed to
 
