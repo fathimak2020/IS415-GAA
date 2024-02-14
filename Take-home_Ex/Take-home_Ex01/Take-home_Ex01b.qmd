@@ -2,7 +2,7 @@
 title: "Take-home Exercise 1b [ANALYSIS]: Application of Spatial Point Patterns Analysis to Discover the Geographical Distribution of Grab Hailing Services in Singapore"
 execute: 
   warning: false
-  eval: false
+  eval: true
   freeze: true
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 ---

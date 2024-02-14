@@ -2,7 +2,7 @@
 title: "Take-home Exercise 1a [DATA PREPARATION]: Application of Spatial Point Patterns Analysis to Discover the Geographical Distribution of Grab Hailing Services in Singapore"
 execute: 
   warning: false
-  eval: false
+  eval: true
   freeze: true
 date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 ---
@@ -58,7 +58,7 @@ By this exercise, I will:
 The study will utilise the following datasets to explore spatial point patterns analysis methods and reveal the geographical and spatio-temporal distribution of Grab hailing services locations in Singapore.
 
 | Dataset Name                               | Type                | Source                                                              | Path                                     |
-|----------------|----------------|-------------------------|----------------|
+|-----------------|-----------------|-----------------------|-----------------|
 | Grab-Posisi                                | Aspatial (.parquet) | <https://engineering.grab.com/grab-posisi>                          | data/aspatial/grabPosisi                 |
 | Master Plan 2019 Subzone Boundary (No Sea) | Geospatial (.shp)   | <https://beta.data.gov.sg/collections/2104/view>                    | data/geospatial/MPSZ-2019                |
 | Open Street Map Road Data                  | Geospatial (.shp)   | <https://download.geofabrik.de/asia/malaysia-singapore-brunei.html> | data/geospatial/OSM/gis_osm_roads_free_1 |
@@ -100,7 +100,7 @@ The R packages used in this project are:
 Pacman assists us by helping us load R packages that we require.
 
 ```{r}
- pacman::p_load(arrow, dplyr, lubridate, maptools, raster, rgdal, RColorBrewer, rmapshaper, sf, sp, spNetwork, spatstat, tidyverse, tmap, ggplot2, plotly)
+pacman::p_load(arrow, dplyr, lubridate, maptools, raster, rgdal, RColorBrewer, rmapshaper, sf, sp, spNetwork, spatstat, tidyverse, tmap, ggplot2, plotly)
 
 #update.packages(ask = FALSE, dependencies = TRUE)
 ## install.packages("maptools", repos = "https://packagemanager.posit.co/cran/2023-10-13")
@@ -130,8 +130,17 @@ In order to create a costal outline of singapore, we will use the `st_union` fun
 
 ```{r}
 outline = mpsz_sf %>% st_union()
+```
+
+```{r}
+#| eval: false
 plot(outline)
 ```
+
+```{}
+```
+
+![](images/image 1.png){fig-align="center"}
 
 ### 2.3.2.1 Extracting Outer Islands
 
@@ -167,8 +176,15 @@ sg_sf <- st_difference(st_union(mpsz_sf), st_union(outer))
 ```{r}
 #write_rds(sg_sf, "data/rds/sg_sf.rds")
 sg_sf <- read_rds("data/rds/sg_sf.rds")
+
+```
+
+```{r}
+#| eval: false
 plot(sg_sf)
 ```
+
+![](images/image 2.png){fig-align="center"}
 
 ::: callout-tip
 We'll save the output in .rds file format to save loading time.
@@ -219,7 +235,6 @@ We store the selected road types in a dataframe called `sg_roads_filtered`.
 
 ```{r}
 sg_roads_filtered <- c("primary", "residential", "tertiary", "service", "secondary", "primary_link", "secondary_link", "tertiary_link")
- 
 ```
 
 ```{r}
@@ -240,6 +255,7 @@ We'll save the output in .rds file format to save loading time.
 We will now visualise the selected road types within the boundaries of Singapore using `tmap`.
 
 ```{r}
+#| eval: false
 road_type_palette <- brewer.pal(12, "Set3")
 tmap_mode('plot')
 tm_shape(sg_sf) + 
@@ -248,6 +264,8 @@ tm_shape(sg_sf) +
   tm_lines(col = "fclass", palette = road_type_palette)
   tm_layout(frame = FALSE, main.title = "Types of Road Networks in Singapore")
 ```
+
+![](images/image 3.png){fig-align="center"}
 
 ::: callout-tip
 ✅ Task Complete! We have extracted the road layer within Singapore.
@@ -411,17 +429,27 @@ To perform spatial point pattern analysis, firstly, we’ll need to convert the 
 
 ```{r}
 grab_origin_ppp <- as.ppp(st_coordinates(grab_origin), st_bbox(grab_origin))
+```
 
+```{r}
+#| eval: false
 par(mar = c(1,1,1,1))
 plot(grab_origin_ppp, main = "Grab Origin Points as PPP Objects")
 ```
 
+![](images/image 4.png){fig-align="center"}
+
 ```{r}
 grab_dest_ppp <- as.ppp(st_coordinates(grab_dest), st_bbox(grab_dest))
+```
 
+```{r}
+#| eval: false
 par(mar = c(1,1,1,1))
 plot(grab_dest_ppp, main = "Grab Destination Points as PPP Objects")
 ```
+
+![](images/image 5.png){fig-align="center"}
 
 ::: callout-tip
 It is not neccessary to change `sg_sf` into a ppp object as it will be converted to `owin` instead.
@@ -463,8 +491,14 @@ sg_owin <- as.owin(sg_sf)
 ```{r}
 #write_rds(sg_owin, "data/rds/sg_owin")
 sg_owin <- read_rds("data/rds/sg_owin")
+```
+
+```{r}
+#| eval: false
 plot(sg_owin)
 ```
+
+![](images/image 6.png){fig-align="center"}
 
 ::: callout-tip
 We'll save the output in .rds file format to save loading time.
@@ -484,9 +518,16 @@ grab_origin_ppp_sg <- grab_origin_ppp[sg_owin]
 ```{r}
 #write_rds(grab_origin_ppp_sg, "data/rds/grab_origin_ppp_sg.rds")
 grab_origin_ppp_sg <- read_rds("data/rds/grab_origin_ppp_sg.rds")
+
+```
+
+```{r}
+#| eval: false
 par(mar = c(1,1,1,1))
 plot(grab_origin_ppp_sg, main = '[OWIN] Grab Origin Points' )
 ```
+
+![](images/image 7.png){fig-align="center"}
 
 ::: callout-tip
 We'll save the output in .rds file format to save loading time.
@@ -502,9 +543,16 @@ grab_dest_ppp_sg <- grab_dest_ppp[sg_owin]
 ```{r}
 #write_rds(grab_dest_ppp_sg, "data/rds/grab_dest_ppp_sg.rds")
 grab_dest_ppp_sg <- read_rds("data/rds/grab_dest_ppp_sg.rds")
+
+```
+
+```{r}
+#| eval: false
 par(mar = c(1,1,1,1))
 plot(grab_dest_ppp_sg, main = '[OWIN] Grab Destination Points' )
 ```
+
+![](images/image 8.png){fig-align="center"}
 
 ::: callout-tip
 We'll save the output in .rds file format to save loading time.
@@ -519,6 +567,7 @@ To better understand the spatial data, we employ a series of exploratory techniq
 The map below shows the geographical distribution of origin and destination points. By overlaying both sets of points, we can observe areas where origin and destination locations overlap. These overlapping areas indicate regions with bidirectional travel.
 
 ```{r}
+#| eval: false
 combined_map <- ggplot() +
   geom_sf(data = grab_origin, aes(color = "Origin"), alpha = 0.7) +
   geom_sf(data = grab_dest, aes(color = "Destination"), alpha = 0.7) +
@@ -533,6 +582,8 @@ print(combined_map)
 
 ```
 
+![](images/image 9.png){fig-align="center"}
+
 ### 3.2 Spatio-Temporal Visualisations
 
 Spatio-temporal visualisations show us a view of how data evolves over both space and time. These visualisations are particularly useful for analysing patterns, trends, and relationships within datasets.
@@ -546,6 +597,7 @@ Let's create interactive plots to provide an insightful representation of the di
 For creating a bar plot with `ggplot`, the pickup hours are first converted to numeric values for analysis. TThe x-axis represents the pickup hours, and the y-axis represents the count of origin locations. To highlight the hours with the highest count with a visual indication, we add a red dashed vertical line on the plot. The **`ggplot`** object is then converted into an interactive plot using **`ggplotly`**, allowing users to hover over bars for detailed information.
 
 ```{r}
+#| eval: false
 grab_origin$start_hr <- as.numeric(grab_origin$start_hr)
 org<- ggplot(data = grab_origin, aes(x = start_hr)) +
   geom_bar() +
@@ -561,6 +613,8 @@ org <- ggplotly(org)
 org
 ```
 
+![](images/image 10.png){fig-align="center"}
+
 The chart above indicates that most pickups occur at 2-3pm, a potential reason could include:
 
 > **After-School Activities**: this time period may coincide with school release times and after-school activities. Parents might be picking up children or transporting them to various activities.
@@ -570,6 +624,7 @@ The chart above indicates that most pickups occur at 2-3pm, a potential reason c
 For creating a bar plot with `ggplot`, the drop-off hours are first converted to numeric values for analysis. TThe x-axis represents the drop-off hours, and the y-axis represents the count of destination locations. To highlight the hours with the highest count with a visual indication, we add a red dashed vertical line on the plot. The **`ggplot`** object is then converted into an interactive plot using **`ggplotly`**, allowing users to hover over bars for detailed information.
 
 ```{r}
+#| eval: false
 grab_dest$end_hr <- as.numeric(grab_dest$end_hr)
 dest<- ggplot(data = grab_dest, aes(x = end_hr)) +
   geom_bar() +
@@ -585,6 +640,8 @@ dest <- ggplotly(dest)
 dest
 ```
 
+![](images/image 11.png){fig-align="center"}
+
 The chart above indicates that most drop-offs occur at 2pm, a potential reason could include:
 
 > **Lunchtime Rush**: 2pm is often around the time people finish their lunch breaks. This could result in increased travel demand as people return to work or resume their activities.
@@ -598,6 +655,7 @@ Let's create a bar chart to explore the frequency of origins/destinations across
 The code uses `ggplot` to create a bar plot, where each bar represents the frequency of pickups on a specific day. This code produces a informative visualisation to explore patterns in pickup frequency throughout the week.
 
 ```{r}
+#| eval: false
 origin_day <- ggplot(data = grab_origin, aes(x = weekday))  +
               geom_bar(fill = "#4C78A8", color = "#4C78A8", alpha = 0.8) +
               labs(title = "Frequency of Pickup by Day of Week",
@@ -608,6 +666,8 @@ origin_day <- ggplotly(origin_day)
 origin_day
 ```
 
+![](images/image 12.png){fig-align="center"}
+
 > The distribution of trips across days appears generally uniform, with a subtle increase observed on Wednesdays.
 
 ### 3.2.2.2 Destination or Drop-off Frequency by Days
@@ -615,6 +675,7 @@ origin_day
 The code uses `ggplot` to create a bar plot, where each bar represents the frequency of drop-offs on a specific day. This code produces a informative visualisation to explore patterns in drop-off frequency throughout the week.
 
 ```{r}
+#| eval: false
 dest_day <- ggplot(data = grab_dest, aes(x = weekday))  +
               geom_bar(fill = "#FF0000", color = "#FF0000", alpha = 0.8) +
               labs(title = "Frequency of Drop-off by Day of Week",
@@ -624,6 +685,8 @@ dest_day <- ggplot(data = grab_dest, aes(x = weekday))  +
 dest_day <- ggplotly(dest_day)
 dest_day
 ```
+
+![](images/image 13.png){fig-align="center"}
 
 > If we plot by destination, we see the same result. This is expected, considering that each trip's origin corresponds to a destination.
 

@@ -210,7 +210,7 @@ dengue_sf <- st_as_sf(dengue_clean,
 We need to identify which points from the `dengue_sf` object intersect with our study area defined by the `counties_sf`.
 
 ```{r}
-# | eval: false
+#| eval: false
 dengue_counties <- st_intersection(dengue_sf, counties_sf)
 
 ```
