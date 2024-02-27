@@ -1,9 +1,13 @@
 ---
-title: "Take-home Exercise 2: Application of Spatial and Spatio-temporal Analysis Methods to Discover the Distribution of Dengue Fever in Tainan City, Taiwan [DATA PREPARATION]"
+title: "Take-home Exercise 2 [DATA PREPARATION]: Application of Spatial and Spatio-temporal Analysis Methods to Discover the Distribution of Dengue Fever in Tainan City, Taiwan "
+format:
+  html:
+    toc: true
 execute: 
   warning: false
   eval: true
-date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+  freeze: true
+date: "14 February 2024"
 ---
 
 ## 2 Overview
@@ -11,6 +15,8 @@ date: "`r format(Sys.Date(), '%Y-%m-%d')`"
 ## 2.1 Setting the scene
 
 Dengue Hemorrhagic Fever (commonly known as dengue fever) is a prevalent mosquito-borne disease in tropical and subtropical regions. Caused by the dengue virus transmitted by female Aedes aegypti and Aedes albopictus mosquitoes, it is characterised by acute symptoms. In 2015, Taiwan experienced a severe outbreak, reporting over 43,000 cases and 228 deaths. Subsequently, annual cases remained below 200 until 2023, when Taiwan recorded 26,703 cases, with Tainan City alone reporting over 25,000 cases.
+
+![](images/9e0e4c3db41fe8202d732dce971d8619.gif){fig-align="center" width="144"}
 
 ## 2.2 Objectives
 
@@ -32,9 +38,9 @@ The specific objectives of this take-home exercise include the following tasks:
 
 -   Provide a detailed description of the spatial patterns revealed by the analyses conducted in the previous steps.
 
-## 2 Getting Started
+## 2.3 Getting Started
 
-## 2.1 Data Acquisition
+## 2.3.1 Data Acquisition
 
 The study will utilise the following datasets to explore the distribution of dengue fever outbreaks in Tainan City, Taiwan, with respect to both spatial and spatio-temporal dimensions.
 
@@ -50,7 +56,7 @@ The study will utilise the following datasets to explore the distribution of den
 | Reported dengue cases in Taiwan |                   |                                                                         |                                     |
 +---------------------------------+-------------------+-------------------------------------------------------------------------+-------------------------------------+
 
-## **2.2 Importing Relevant R Packages**
+## **2.3.2 Importing Relevant R Packages**
 
 The R packages used in this project are:
 
@@ -79,9 +85,9 @@ pacman::p_load(dplyr,maptools, rgdal,sf, sp, tidyverse, tmap, ggplot2, plotly, l
 
 ```
 
-## 2.3 Importing Geospatial Datasets
+## 2.3.3 Importing Geospatial Datasets
 
-### 2.3.1 Village Boudary of Taiwan
+### 2.3.3.1 Village Boudary of Taiwan
 
 For shapefile format, two arguments are required: `dsn` to define the data path, and `layer` to provide the shapefile name. 
 
@@ -93,14 +99,14 @@ tainan_sf <- st_read(dsn = "data/geospatial",
 We see that the CRS is TWD 97; let's verify whether it has been assigned the accurate EPSG code as well.
 
 ```{r}
-st_crs(tainan_sf)
+#st_crs(tainan_sf)
 ```
 
 The correct EPSG for TWD 97 is 3826, and it has been inaccurately assigned. Let's assign the correct EPSG code.
 
 ```{r}
-tainan_sf <- st_set_crs(tainan_sf, 3826)
-st_crs(tainan_sf)
+#tainan_sf <- st_set_crs(tainan_sf, 3826)
+#st_crs(tainan_sf)
 ```
 
 ::: callout-important
@@ -120,7 +126,7 @@ We use `head()` to gather more information about the dataset.
 head(tainan_sf)
 ```
 
-In the dataset, county IDs are contained in a column named `TOWNID`. Our focus is on the counties with the IDs D01, D02, D04, D06, D07, D08, D32, and D39. The provided code snippet utilises the `subset` function to extract the relevant counties from the `tainan_sf` dataset, and these selected rows are then stored in a new dataframe named `counties`.
+In the dataset, county IDs are contained in a column named `TOWNID`. Our focus is on the counties with the IDs D01, D02, D04, D06, D07, D08, D32, and D39. The provided code snippet utilises the `subset` function to extract the relevant counties from the `tainan_sf` dataset, and these selected rows are then stored in a new dataframe named `counties_sf`.
 
 ```{r}
 d01 <- subset(tainan_sf, tainan_sf$TOWNID == "D01")
@@ -134,19 +140,7 @@ d39 <- subset(tainan_sf, tainan_sf$TOWNID == "D39")
 ```
 
 ```{r}
-counties <- dplyr::bind_rows(list(d01, d02, d04, d06, d07, d08, d32, d39))
-```
-
-Let\`s check if `counties` has been assigned the correct EPSG.
-
-```{r}
-st_crs(counties)
-```
-
-The correct EPSG for TWD 97 is 3826, and it has been inaccurately assigned. Let's assign the correct EPSG code.
-
-```{r}
-counties_sf <- st_transform(counties, st_crs(3826))
+counties_sf <- dplyr::bind_rows(list(d01, d02, d04, d06, d07, d08, d32, d39))
 ```
 
 We visualise our study area using `tmap` and apply a color code based on the county ID.
@@ -161,9 +155,9 @@ tm_shape(counties_sf) +
 ✅ Task Complete! We have obtained the counties of interest as the study area.
 :::
 
-## 2.4 Importing Aspatial Dataset
+## 2.3.4 Importing Aspatial Dataset
 
-### 2.4.1 Dengue Cases
+### 2.3.4.1 Dengue Cases
 
 ```{r}
 dengue <- read_csv("data/aspatial/Dengue_Daily.csv")
@@ -179,40 +173,63 @@ We must retrieve epidemiological data for weeks 31-50 of the year 2023 from this
 
 The columns to be selected and renamed are:
 
--   發病日: Onset date
+-   發病日: Onset date (we need to convert to numeric)
 
--   最小統計區中心點X: x-coordinate
+-   最小統計區中心點X: x-coordinate (Note: class is character, we need to convert to numeric)
 
--   最小統計區中心點Y: y-coordinate
+-   最小統計區中心點Y: y-coordinate (Note: class is character, we need to convert to numeric)
 
-Simultaneously, any missing values will be eliminated. Cells containing missing values are denoted by the word 'none'. So, we will filter out rows where X_coordinate is not equal to 'none' and Y_coordinate is not equal to 'none' to eliminate missing values.
+-   居住村里: VILLNAME
+
+-   居住鄉鎮: TOWNNAME
+
+First let's extract the week numbers between 31-50 from the year 2023 using the `lubridate` package. To do this, we first check if our columns are in the right format.
+
+```{r}
+dengue$發病日 <- as.Date(dengue$發病日)
+dengue$week_number <- as.numeric(format(dengue$發病日, "%V"))
+```
+
+Note: %v is to represent the ISO 8601 week number of the year.
 
 ```{r}
 dengue_clean <- dengue %>%
-  filter(between(week(as.Date(發病日)), 31, 50) & year(as.Date(發病日)) == 2023) %>%
-  select(
-    Onset_date = 發病日,
-    X_coordinate = 最小統計區中心點X,
-    Y_coordinate = 最小統計區中心點Y
-  ) %>%
-  filter(X_coordinate != 'None' & Y_coordinate != 'None')
+  filter(week_number >= 31 & week_number <= 50 & year(發病日) == 2023)
 ```
 
-Now, we will convert `dengue_clean` to an sf object by assigning the appropriate CRS.
+```{r}
+dengue_clean <- dengue_clean %>%
+  rename(`Onset_date` = 發病日,
+    `X_coordinate` = 最小統計區中心點X,
+    `Y_coordinate` = 最小統計區中心點Y,
+    `VILLNAME` = 居住村里,
+    `TOWNNAME` = 居住鄉鎮
+      )
+```
+
+Change the format of X and Y coordinates to numeric data type from character.
 
 ```{r}
-dengue_sf <- st_as_sf(dengue_clean,
-                      coords = c("X_coordinate", "Y_coordinate"),
-                      crs = 4326) %>%
-  st_transform(crs = 3826)
+dengue_clean$`X_coordinate` <- as.numeric(dengue_clean$`X_coordinate`)
+dengue_clean$`Y_coordinate` <- as.numeric(dengue_clean$`Y_coordinate`)
+```
+
+Note: NAs introduced by coercion so we remove them.
+
+```{r}
+dengue_clean <- na.omit(dengue_clean)
+```
+
+Now, we will convert `dengue_clean` to an sf object by assigning the appropriate CRS, same as counties_sf.
+
+```{r}
+dengue_sf <- st_as_sf(dengue_clean, coords = c('X_coordinate', 'Y_coordinate'), crs = st_crs(counties_sf))
 ```
 
 We need to identify which points from the `dengue_sf` object intersect with our study area defined by the `counties_sf`.
 
 ```{r}
-#| eval: false
-dengue_counties <- st_intersection(dengue_sf, counties_sf)
-
+#dengue_counties <- st_intersection(counties_sf,dengue_sf)
 ```
 
 ```{r}
@@ -226,10 +243,124 @@ Let's plot and visualise these points on a map.
 tm_shape(counties_sf) +
   tm_polygons("TOWNID") +
 tm_shape(dengue_counties) +
-  tm_symbols(size = 0.02, col = "black")
+  tm_dots(col = "black")
 
 ```
 
 ::: callout-tip
 ✅ Task Complete! We have extracted a dengue fever layer within the study area.
 :::
+
+Our next task is to create a derived dengue fever layer and add a data field indicating the number of dengue fever cases by village and by epidemiology week.
+
+To do this, we use the `group_by` function and sum the count of dengue cases (確定病例數).
+
+```{r}
+dengue_grouped <- dengue_clean %>%
+  group_by(TOWNNAME, VILLNAME, week_number) %>%
+  summarise(case_count = sum(確定病例數))
+```
+
+Simultaneously, any missing values will be eliminated. Cells containing missing values are denoted by the word 'none'. So, we will filter out rows where values are not equal to 'none' to eliminate missing values
+
+```{r}
+dengue_grouped <- dengue_grouped %>%
+  filter(VILLNAME != "None")
+  
+```
+
+Now we will perform a left join to include this new `dengue_grouped` data into our `counties_sf` dataframe, using townname and villname as the joining criteria.
+
+```{r}
+dengue_join <- left_join(counties_sf, dengue_grouped, by = c("TOWNNAME","VILLNAME"))
+```
+
+The join has resulted in some NA values. To help with our subsequent analysis, we will replace all NA values with 0.
+
+```{r}
+dengue_join$case_count <- ifelse(is.na(dengue_join$case_count), 0, dengue_join$case_count)
+
+```
+
+::: callout-tip
+✅ Task Complete! We have created a data field indicating the number of dengue fever cases by village and by epidemiology week.
+:::
+
+## **2.4 EDA**
+
+Now we will create a series of choropleth maps to visualise the distribution of dengue cases across various counties through August to December.
+
+```{r}
+tmap_mode("plot")
+tm_shape(dengue_join) +
+  tm_fill("case_count",
+          style = "quantile",
+          palette = "Reds",
+          title = "Number of Dengue Cases",
+          legend.show = TRUE,
+          popup.vars = c("case_count")) +
+  tm_layout(main.title = "Dengue Cases in Tainan",
+            main.title.position = "center",
+            main.title.size = 1,
+            legend.height = 0.5,
+            legend.width = 0.4,
+            frame = TRUE) +
+  tm_borders(alpha = 0.8) +
+  tm_compass(type = "arrow", size = 1.5) +
+  tm_scale_bar() +
+  tm_grid(alpha = 0.2)
+
+```
+
+Let's visualise the case distribution by month to see if we can gather any insight about dengue cases and month of the year.
+
+First classify the weeks into their respective months.
+
+-   August 2023: 31, 32, 33, 34, 35
+
+-   September 2023: 36, 37, 38, 39
+
+-   October 2023: 40, 41, 42, 43
+
+-   November 2023: 44, 45, 46, 47
+
+-   December 2023: 48, 49, 50
+
+```{r}
+create_dengue_map <- function(data, title, start_week, end_week) {
+  map_data <- data %>%
+    filter(week_number >= start_week & week_number <= end_week)
+  
+  tmap_mode("plot")
+  tm_shape(map_data) +
+    tm_fill("case_count",
+            style = "quantile",
+            palette = "Reds",
+            title = paste("Count")) +
+        tm_layout(main.title = paste(title),
+              main.title.position = "center",
+              main.title.size = 1,  
+              legend.height = 0.5,  
+              legend.width = 0.4,  
+              frame = TRUE) +
+    tm_borders(alpha = 0.8) + 
+        tm_grid(alpha = 0.2)
+}
+
+aug_map <- create_dengue_map(dengue_join, "August", 31, 35)
+sep_map <- create_dengue_map(dengue_join, "September", 36, 39)
+oct_map <- create_dengue_map(dengue_join, "October", 40, 43)
+nov_map <- create_dengue_map(dengue_join, "November", 44, 47)
+dec_map <- create_dengue_map(dengue_join, "December", 48, 50)
+
+tmap_arrange(aug_map, sep_map, oct_map, nov_map, dec_map)
+
+```
+
+::: callout-note
+Throughout the months from **August** to **December**, a noticeable trend emerges in Tainan's various counties: the intensity of red on the maps **steadily diminishes**. This reduction suggests a **decline in the number of reported dengue cases each month**. Several factors could contribute to this decline, including **effective control measures** such as prompt medical treatment and public health interventions. Additionally, the **decreasing temperatures towards December** might play a role, as mosquitoes, responsible for dengue transmission, thrive in warmer environments.
+
+Moreover, another observation is the **spatial clustering of high dengue case numbers in neighboring counties**. Understanding these geographical patterns becomes important for targeted interventions and collaborative efforts among neighboring regions to address and mitigate the prevalence of dengue.
+:::
+
+> [**Proceed to Take-home Exercise 2b: Analysis**](https://is415-gaa-fathima.netlify.app/take-home_ex/take-home_ex02/take-home_ex02b)

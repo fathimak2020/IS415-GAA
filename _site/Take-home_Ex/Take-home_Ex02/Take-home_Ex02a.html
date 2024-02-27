@@ -8,7 +8,7 @@
 
 <meta name="dcterms.date" content="2024-02-14">
 
-<title>IS415 - GAA - Take-home Exercise 2: Application of Spatial and Spatio-temporal Analysis Methods to Discover the Distribution of Dengue Fever in Tainan City, Taiwan [DATA PREPARATION]</title>
+<title>IS415 - GAA - Take-home Exercise 2 [DATA PREPARATION]: Application of Spatial and Spatio-temporal Analysis Methods to Discover the Distribution of Dengue Fever in Tainan City, Taiwan</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -238,17 +238,18 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#overview" id="toc-overview" class="nav-link active" data-scroll-target="#overview">2 Overview</a></li>
   <li><a href="#setting-the-scene" id="toc-setting-the-scene" class="nav-link" data-scroll-target="#setting-the-scene">2.1 Setting the scene</a></li>
   <li><a href="#objectives" id="toc-objectives" class="nav-link" data-scroll-target="#objectives">2.2 Objectives</a></li>
-  <li><a href="#getting-started" id="toc-getting-started" class="nav-link" data-scroll-target="#getting-started">2 Getting Started</a></li>
-  <li><a href="#data-acquisition" id="toc-data-acquisition" class="nav-link" data-scroll-target="#data-acquisition">2.1 Data Acquisition</a></li>
-  <li><a href="#importing-relevant-r-packages" id="toc-importing-relevant-r-packages" class="nav-link" data-scroll-target="#importing-relevant-r-packages"><strong>2.2 Importing Relevant R Packages</strong></a></li>
-  <li><a href="#importing-geospatial-datasets" id="toc-importing-geospatial-datasets" class="nav-link" data-scroll-target="#importing-geospatial-datasets">2.3 Importing Geospatial Datasets</a>
+  <li><a href="#getting-started" id="toc-getting-started" class="nav-link" data-scroll-target="#getting-started">2.3 Getting Started</a></li>
+  <li><a href="#data-acquisition" id="toc-data-acquisition" class="nav-link" data-scroll-target="#data-acquisition">2.3.1 Data Acquisition</a></li>
+  <li><a href="#importing-relevant-r-packages" id="toc-importing-relevant-r-packages" class="nav-link" data-scroll-target="#importing-relevant-r-packages"><strong>2.3.2 Importing Relevant R Packages</strong></a></li>
+  <li><a href="#importing-geospatial-datasets" id="toc-importing-geospatial-datasets" class="nav-link" data-scroll-target="#importing-geospatial-datasets">2.3.3 Importing Geospatial Datasets</a>
   <ul class="collapse">
-  <li><a href="#village-boudary-of-taiwan" id="toc-village-boudary-of-taiwan" class="nav-link" data-scroll-target="#village-boudary-of-taiwan">2.3.1 Village Boudary of Taiwan</a></li>
+  <li><a href="#village-boudary-of-taiwan" id="toc-village-boudary-of-taiwan" class="nav-link" data-scroll-target="#village-boudary-of-taiwan">2.3.3.1 Village Boudary of Taiwan</a></li>
   </ul></li>
-  <li><a href="#importing-aspatial-dataset" id="toc-importing-aspatial-dataset" class="nav-link" data-scroll-target="#importing-aspatial-dataset">2.4 Importing Aspatial Dataset</a>
+  <li><a href="#importing-aspatial-dataset" id="toc-importing-aspatial-dataset" class="nav-link" data-scroll-target="#importing-aspatial-dataset">2.3.4 Importing Aspatial Dataset</a>
   <ul class="collapse">
-  <li><a href="#dengue-cases" id="toc-dengue-cases" class="nav-link" data-scroll-target="#dengue-cases">2.4.1 Dengue Cases</a></li>
+  <li><a href="#dengue-cases" id="toc-dengue-cases" class="nav-link" data-scroll-target="#dengue-cases">2.3.4.1 Dengue Cases</a></li>
   </ul></li>
+  <li><a href="#eda" id="toc-eda" class="nav-link" data-scroll-target="#eda"><strong>2.4 EDA</strong></a></li>
   </ul>
 </nav>
     </div>
@@ -257,7 +258,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Take-home Exercise 2: Application of Spatial and Spatio-temporal Analysis Methods to Discover the Distribution of Dengue Fever in Tainan City, Taiwan [DATA PREPARATION]</h1>
+<h1 class="title">Take-home Exercise 2 [DATA PREPARATION]: Application of Spatial and Spatio-temporal Analysis Methods to Discover the Distribution of Dengue Fever in Tainan City, Taiwan</h1>
 </div>
 
 
@@ -284,6 +285,11 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <section id="setting-the-scene" class="level2">
 <h2 class="anchored" data-anchor-id="setting-the-scene">2.1 Setting the scene</h2>
 <p>Dengue Hemorrhagic Fever (commonly known as dengue fever) is a prevalent mosquito-borne disease in tropical and subtropical regions. Caused by the dengue virus transmitted by female Aedes aegypti and Aedes albopictus mosquitoes, it is characterised by acute symptoms. In 2015, Taiwan experienced a severe outbreak, reporting over 43,000 cases and 228 deaths. Subsequently, annual cases remained below 200 until 2023, when Taiwan recorded 26,703 cases, with Tainan City alone reporting over 25,000 cases.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="images/9e0e4c3db41fe8202d732dce971d8619.gif" class="img-fluid figure-img" width="144"></p>
+</figure>
+</div>
 </section>
 <section id="objectives" class="level2">
 <h2 class="anchored" data-anchor-id="objectives">2.2 Objectives</h2>
@@ -300,10 +306,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </ul>
 </section>
 <section id="getting-started" class="level2">
-<h2 class="anchored" data-anchor-id="getting-started">2 Getting Started</h2>
+<h2 class="anchored" data-anchor-id="getting-started">2.3 Getting Started</h2>
 </section>
 <section id="data-acquisition" class="level2">
-<h2 class="anchored" data-anchor-id="data-acquisition">2.1 Data Acquisition</h2>
+<h2 class="anchored" data-anchor-id="data-acquisition">2.3.1 Data Acquisition</h2>
 <p>The study will utilise the following datasets to explore the distribution of dengue fever outbreaks in Tainan City, Taiwan, with respect to both spatial and spatio-temporal dimensions.</p>
 <table class="table">
 <thead>
@@ -333,7 +339,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </table>
 </section>
 <section id="importing-relevant-r-packages" class="level2">
-<h2 class="anchored" data-anchor-id="importing-relevant-r-packages"><strong>2.2 Importing Relevant R Packages</strong></h2>
+<h2 class="anchored" data-anchor-id="importing-relevant-r-packages"><strong>2.3.2 Importing Relevant R Packages</strong></h2>
 <p>The R packages used in this project are:</p>
 <ol type="1">
 <li><p><code>dplyr</code>: for data manipulation</p></li>
@@ -352,9 +358,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section>
 <section id="importing-geospatial-datasets" class="level2">
-<h2 class="anchored" data-anchor-id="importing-geospatial-datasets">2.3 Importing Geospatial Datasets</h2>
+<h2 class="anchored" data-anchor-id="importing-geospatial-datasets">2.3.3 Importing Geospatial Datasets</h2>
 <section id="village-boudary-of-taiwan" class="level3">
-<h3 class="anchored" data-anchor-id="village-boudary-of-taiwan">2.3.1 Village Boudary of Taiwan</h3>
+<h3 class="anchored" data-anchor-id="village-boudary-of-taiwan">2.3.3.1 Village Boudary of Taiwan</h3>
 <p>For shapefile format, two arguments are required:&nbsp;<code>dsn</code>&nbsp;to define the data path, and&nbsp;<code>layer</code>&nbsp;to provide the shapefile name.&nbsp;</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>tainan_sf <span class="ot">&lt;-</span> <span class="fu">st_read</span>(<span class="at">dsn =</span> <span class="st">"data/geospatial"</span>, </span>
@@ -372,78 +378,12 @@ Geodetic CRS:  TWD97</code></pre>
 </div>
 <p>We see that the CRS is TWD 97; let’s verify whether it has been assigned the accurate EPSG code as well.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_crs</span>(tainan_sf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Coordinate Reference System:
-  User input: TWD97 
-  wkt:
-GEOGCRS["TWD97",
-    DATUM["Taiwan Datum 1997",
-        ELLIPSOID["GRS 1980",6378137,298.257222101,
-            LENGTHUNIT["metre",1]]],
-    PRIMEM["Greenwich",0,
-        ANGLEUNIT["degree",0.0174532925199433]],
-    CS[ellipsoidal,2],
-        AXIS["geodetic latitude (Lat)",north,
-            ORDER[1],
-            ANGLEUNIT["degree",0.0174532925199433]],
-        AXIS["geodetic longitude (Lon)",east,
-            ORDER[2],
-            ANGLEUNIT["degree",0.0174532925199433]],
-    USAGE[
-        SCOPE["Horizontal component of 3D system."],
-        AREA["Taiwan, Republic of China - onshore and offshore - Taiwan Island, Penghu (Pescadores) Islands."],
-        BBOX[17.36,114.32,26.96,123.61]],
-    ID["EPSG",3824]]</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co">#st_crs(tainan_sf)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The correct EPSG for TWD 97 is 3826, and it has been inaccurately assigned. Let’s assign the correct EPSG code.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>tainan_sf <span class="ot">&lt;-</span> <span class="fu">st_set_crs</span>(tainan_sf, <span class="dv">3826</span>)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">st_crs</span>(tainan_sf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Coordinate Reference System:
-  User input: EPSG:3826 
-  wkt:
-PROJCRS["TWD97 / TM2 zone 121",
-    BASEGEOGCRS["TWD97",
-        DATUM["Taiwan Datum 1997",
-            ELLIPSOID["GRS 1980",6378137,298.257222101,
-                LENGTHUNIT["metre",1]]],
-        PRIMEM["Greenwich",0,
-            ANGLEUNIT["degree",0.0174532925199433]],
-        ID["EPSG",3824]],
-    CONVERSION["Taiwan 2-degree TM zone 121",
-        METHOD["Transverse Mercator",
-            ID["EPSG",9807]],
-        PARAMETER["Latitude of natural origin",0,
-            ANGLEUNIT["degree",0.0174532925199433],
-            ID["EPSG",8801]],
-        PARAMETER["Longitude of natural origin",121,
-            ANGLEUNIT["degree",0.0174532925199433],
-            ID["EPSG",8802]],
-        PARAMETER["Scale factor at natural origin",0.9999,
-            SCALEUNIT["unity",1],
-            ID["EPSG",8805]],
-        PARAMETER["False easting",250000,
-            LENGTHUNIT["metre",1],
-            ID["EPSG",8806]],
-        PARAMETER["False northing",0,
-            LENGTHUNIT["metre",1],
-            ID["EPSG",8807]]],
-    CS[Cartesian,2],
-        AXIS["easting (X)",east,
-            ORDER[1],
-            LENGTHUNIT["metre",1]],
-        AXIS["northing (Y)",north,
-            ORDER[2],
-            LENGTHUNIT["metre",1]],
-    USAGE[
-        SCOPE["Engineering survey, topographic mapping."],
-        AREA["Taiwan, Republic of China - between 120°E and 122°E, onshore and offshore - Taiwan Island."],
-        BBOX[20.41,119.99,26.72,122.06]],
-    ID["EPSG",3826]]</code></pre>
-</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co">#tainan_sf &lt;- st_set_crs(tainan_sf, 3826)</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="co">#st_crs(tainan_sf)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="callout callout-style-default callout-important callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -460,21 +400,21 @@ Important
 </div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>))</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(tainan_sf))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">par</span>(<span class="at">mar =</span> <span class="fu">c</span>(<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>,<span class="dv">0</span>))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="fu">st_geometry</span>(tainan_sf))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
 <p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-5-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <p>We use <code>head()</code> to gather more information about the dataset.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(tainan_sf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(tainan_sf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Simple feature collection with 6 features and 10 fields
 Geometry type: POLYGON
 Dimension:     XY
 Bounding box:  xmin: 120.053 ymin: 22.93251 xmax: 120.2905 ymax: 23.16919
-Projected CRS: TWD97 / TM2 zone 121
+Geodetic CRS:  TWD97
      VILLCODE COUNTYNAME TOWNNAME VILLNAME        VILLENG COUNTYID COUNTYCODE
 1 67000280002     臺南市   歸仁區   六甲里    Liujia Vil.        D      67000
 2 67000350032     臺南市   安南區   青草里   Qingcao Vil.        D      67000
@@ -491,78 +431,27 @@ Projected CRS: TWD97 / TM2 zone 121
 6    D22 67000150 &lt;NA&gt; POLYGON ((120.126 23.16917,...</code></pre>
 </div>
 </div>
-<p>In the dataset, county IDs are contained in a column named <code>TOWNID</code>. Our focus is on the counties with the IDs D01, D02, D04, D06, D07, D08, D32, and D39. The provided code snippet utilises the <code>subset</code> function to extract the relevant counties from the <code>tainan_sf</code> dataset, and these selected rows are then stored in a new dataframe named <code>counties</code>.</p>
+<p>In the dataset, county IDs are contained in a column named <code>TOWNID</code>. Our focus is on the counties with the IDs D01, D02, D04, D06, D07, D08, D32, and D39. The provided code snippet utilises the <code>subset</code> function to extract the relevant counties from the <code>tainan_sf</code> dataset, and these selected rows are then stored in a new dataframe named <code>counties_sf</code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>d01 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D01"</span>)</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>d02 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D02"</span>)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>d04 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D04"</span>)</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>d06 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D06"</span>)</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>d07 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D07"</span>)</span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>d08 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D08"</span>)</span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>d32 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D32"</span>)</span>
-<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>d39 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D39"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>d01 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D01"</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>d02 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D02"</span>)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>d04 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D04"</span>)</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>d06 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D06"</span>)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>d07 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D07"</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>d08 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D08"</span>)</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>d32 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D32"</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>d39 <span class="ot">&lt;-</span> <span class="fu">subset</span>(tainan_sf, tainan_sf<span class="sc">$</span>TOWNID <span class="sc">==</span> <span class="st">"D39"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>counties <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(<span class="fu">list</span>(d01, d02, d04, d06, d07, d08, d32, d39))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Let`s check if <code>counties</code> has been assigned the correct EPSG.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">st_crs</span>(counties)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>Coordinate Reference System:
-  User input: EPSG:3826 
-  wkt:
-PROJCRS["TWD97 / TM2 zone 121",
-    BASEGEOGCRS["TWD97",
-        DATUM["Taiwan Datum 1997",
-            ELLIPSOID["GRS 1980",6378137,298.257222101,
-                LENGTHUNIT["metre",1]]],
-        PRIMEM["Greenwich",0,
-            ANGLEUNIT["degree",0.0174532925199433]],
-        ID["EPSG",3824]],
-    CONVERSION["Taiwan 2-degree TM zone 121",
-        METHOD["Transverse Mercator",
-            ID["EPSG",9807]],
-        PARAMETER["Latitude of natural origin",0,
-            ANGLEUNIT["degree",0.0174532925199433],
-            ID["EPSG",8801]],
-        PARAMETER["Longitude of natural origin",121,
-            ANGLEUNIT["degree",0.0174532925199433],
-            ID["EPSG",8802]],
-        PARAMETER["Scale factor at natural origin",0.9999,
-            SCALEUNIT["unity",1],
-            ID["EPSG",8805]],
-        PARAMETER["False easting",250000,
-            LENGTHUNIT["metre",1],
-            ID["EPSG",8806]],
-        PARAMETER["False northing",0,
-            LENGTHUNIT["metre",1],
-            ID["EPSG",8807]]],
-    CS[Cartesian,2],
-        AXIS["easting (X)",east,
-            ORDER[1],
-            LENGTHUNIT["metre",1]],
-        AXIS["northing (Y)",north,
-            ORDER[2],
-            LENGTHUNIT["metre",1]],
-    USAGE[
-        SCOPE["Engineering survey, topographic mapping."],
-        AREA["Taiwan, Republic of China - between 120°E and 122°E, onshore and offshore - Taiwan Island."],
-        BBOX[20.41,119.99,26.72,122.06]],
-    ID["EPSG",3826]]</code></pre>
-</div>
-</div>
-<p>The correct EPSG for TWD 97 is 3826, and it has been inaccurately assigned. Let’s assign the correct EPSG code.</p>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>counties_sf <span class="ot">&lt;-</span> <span class="fu">st_transform</span>(counties, <span class="fu">st_crs</span>(<span class="dv">3826</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>counties_sf <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(<span class="fu">list</span>(d01, d02, d04, d06, d07, d08, d32, d39))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>We visualise our study area using <code>tmap</code> and apply a color code based on the county ID.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">'plot'</span>)</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(counties_sf) <span class="sc">+</span> </span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>(<span class="st">"TOWNID"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">'plot'</span>)</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(counties_sf) <span class="sc">+</span> </span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>(<span class="st">"TOWNID"</span>) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
@@ -581,15 +470,15 @@ Tip
 </section>
 </section>
 <section id="importing-aspatial-dataset" class="level2">
-<h2 class="anchored" data-anchor-id="importing-aspatial-dataset">2.4 Importing Aspatial Dataset</h2>
+<h2 class="anchored" data-anchor-id="importing-aspatial-dataset">2.3.4 Importing Aspatial Dataset</h2>
 <section id="dengue-cases" class="level3">
-<h3 class="anchored" data-anchor-id="dengue-cases">2.4.1 Dengue Cases</h3>
+<h3 class="anchored" data-anchor-id="dengue-cases">2.3.4.1 Dengue Cases</h3>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>dengue <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/aspatial/Dengue_Daily.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>dengue <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">"data/aspatial/Dengue_Daily.csv"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>We use <code>head()</code> to gather more information about the dataset.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(dengue)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(dengue)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code># A tibble: 6 × 26
   發病日     個案研判日 通報日     性別  年齡層 居住縣市 居住鄉鎮 居住村里
@@ -611,44 +500,60 @@ Tip
 <p>We must retrieve epidemiological data for weeks 31-50 of the year 2023 from this dataset. We can utilise the <code>lubridate</code> package. Then we will choose the necessary columns, rename them, and save the results in a new dataframe named dengue_clean.</p>
 <p>The columns to be selected and renamed are:</p>
 <ul>
-<li><p>發病日: Onset date</p></li>
-<li><p>最小統計區中心點X: x-coordinate</p></li>
-<li><p>最小統計區中心點Y: y-coordinate</p></li>
+<li><p>發病日: Onset date (we need to convert to numeric)</p></li>
+<li><p>最小統計區中心點X: x-coordinate (Note: class is character, we need to convert to numeric)</p></li>
+<li><p>最小統計區中心點Y: y-coordinate (Note: class is character, we need to convert to numeric)</p></li>
+<li><p>居住村里: VILLNAME</p></li>
+<li><p>居住鄉鎮: TOWNNAME</p></li>
 </ul>
-<p>Simultaneously, any missing values will be eliminated. Cells containing missing values are denoted by the word ‘none’. So, we will filter out rows where X_coordinate is not equal to ‘none’ and Y_coordinate is not equal to ‘none’ to eliminate missing values.</p>
+<p>First let’s extract the week numbers between 31-50 from the year 2023 using the <code>lubridate</code> package. To do this, we first check if our columns are in the right format.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>dengue_clean <span class="ot">&lt;-</span> dengue <span class="sc">%&gt;%</span></span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">between</span>(<span class="fu">week</span>(<span class="fu">as.Date</span>(發病日)), <span class="dv">31</span>, <span class="dv">50</span>) <span class="sc">&amp;</span> <span class="fu">year</span>(<span class="fu">as.Date</span>(發病日)) <span class="sc">==</span> <span class="dv">2023</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">Onset_date =</span> 發病日,</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">X_coordinate =</span> 最小統計區中心點X,</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">Y_coordinate =</span> 最小統計區中心點Y</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(X_coordinate <span class="sc">!=</span> <span class="st">'None'</span> <span class="sc">&amp;</span> Y_coordinate <span class="sc">!=</span> <span class="st">'None'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>dengue<span class="sc">$</span>發病日 <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(dengue<span class="sc">$</span>發病日)</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>dengue<span class="sc">$</span>week_number <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">format</span>(dengue<span class="sc">$</span>發病日, <span class="st">"%V"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Now, we will convert <code>dengue_clean</code> to an sf object by assigning the appropriate CRS.</p>
+<p>Note: %v is to represent the ISO 8601 week number of the year.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>dengue_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(dengue_clean,</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>                      <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">"X_coordinate"</span>, <span class="st">"Y_coordinate"</span>),</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>                      <span class="at">crs =</span> <span class="dv">4326</span>) <span class="sc">%&gt;%</span></span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_transform</span>(<span class="at">crs =</span> <span class="dv">3826</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>dengue_clean <span class="ot">&lt;-</span> dengue <span class="sc">%&gt;%</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(week_number <span class="sc">&gt;=</span> <span class="dv">31</span> <span class="sc">&amp;</span> week_number <span class="sc">&lt;=</span> <span class="dv">50</span> <span class="sc">&amp;</span> <span class="fu">year</span>(發病日) <span class="sc">==</span> <span class="dv">2023</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>dengue_clean <span class="ot">&lt;-</span> dengue_clean <span class="sc">%&gt;%</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">`</span><span class="at">Onset_date</span><span class="st">`</span> <span class="ot">=</span> 發病日,</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">X_coordinate</span><span class="st">`</span> <span class="ot">=</span> 最小統計區中心點X,</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Y_coordinate</span><span class="st">`</span> <span class="ot">=</span> 最小統計區中心點Y,</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">VILLNAME</span><span class="st">`</span> <span class="ot">=</span> 居住村里,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">TOWNNAME</span><span class="st">`</span> <span class="ot">=</span> 居住鄉鎮</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>      )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Change the format of X and Y coordinates to numeric data type from character.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>dengue_clean<span class="sc">$</span><span class="st">`</span><span class="at">X_coordinate</span><span class="st">`</span> <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(dengue_clean<span class="sc">$</span><span class="st">`</span><span class="at">X_coordinate</span><span class="st">`</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>dengue_clean<span class="sc">$</span><span class="st">`</span><span class="at">Y_coordinate</span><span class="st">`</span> <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(dengue_clean<span class="sc">$</span><span class="st">`</span><span class="at">Y_coordinate</span><span class="st">`</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Note: NAs introduced by coercion so we remove them.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>dengue_clean <span class="ot">&lt;-</span> <span class="fu">na.omit</span>(dengue_clean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now, we will convert <code>dengue_clean</code> to an sf object by assigning the appropriate CRS, same as counties_sf.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>dengue_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(dengue_clean, <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">'X_coordinate'</span>, <span class="st">'Y_coordinate'</span>), <span class="at">crs =</span> <span class="fu">st_crs</span>(counties_sf))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>We need to identify which points from the <code>dengue_sf</code> object intersect with our study area defined by the <code>counties_sf</code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>dengue_counties <span class="ot">&lt;-</span> <span class="fu">st_intersection</span>(dengue_sf, counties_sf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co">#dengue_counties &lt;- st_intersection(counties_sf,dengue_sf)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co">#write_rds(dengue_counties, "data/rds/dengue_counties.rds")</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>dengue_counties <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">"data/rds/dengue_counties.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">#write_rds(dengue_counties, "data/rds/dengue_counties.rds")</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>dengue_counties <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">"data/rds/dengue_counties.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Let’s plot and visualise these points on a map.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(counties_sf) <span class="sc">+</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>(<span class="st">"TOWNID"</span>) <span class="sc">+</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(dengue_counties) <span class="sc">+</span></span>
-<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_symbols</span>(<span class="at">size =</span> <span class="fl">0.02</span>, <span class="at">col =</span> <span class="st">"black"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(counties_sf) <span class="sc">+</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>(<span class="st">"TOWNID"</span>) <span class="sc">+</span></span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(dengue_counties) <span class="sc">+</span></span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_dots</span>(<span class="at">col =</span> <span class="st">"black"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid" width="672"></p>
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
@@ -664,9 +569,127 @@ Tip
 <p>✅ Task Complete! We have extracted a dengue fever layer within the study area.</p>
 </div>
 </div>
-
-
+<p>Our next task is to create a derived dengue fever layer and add a data field indicating the number of dengue fever cases by village and by epidemiology week.</p>
+<p>To do this, we use the <code>group_by</code> function and sum the count of dengue cases (確定病例數).</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>dengue_grouped <span class="ot">&lt;-</span> dengue_clean <span class="sc">%&gt;%</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(TOWNNAME, VILLNAME, week_number) <span class="sc">%&gt;%</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">case_count =</span> <span class="fu">sum</span>(確定病例數))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Simultaneously, any missing values will be eliminated. Cells containing missing values are denoted by the word ‘none’. So, we will filter out rows where values are not equal to ‘none’ to eliminate missing values</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>dengue_grouped <span class="ot">&lt;-</span> dengue_grouped <span class="sc">%&gt;%</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(VILLNAME <span class="sc">!=</span> <span class="st">"None"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now we will perform a left join to include this new <code>dengue_grouped</code> data into our <code>counties_sf</code> dataframe, using townname and villname as the joining criteria.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>dengue_join <span class="ot">&lt;-</span> <span class="fu">left_join</span>(counties_sf, dengue_grouped, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"TOWNNAME"</span>,<span class="st">"VILLNAME"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The join has resulted in some NA values. To help with our subsequent analysis, we will replace all NA values with 0.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>dengue_join<span class="sc">$</span>case_count <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(dengue_join<span class="sc">$</span>case_count), <span class="dv">0</span>, dengue_join<span class="sc">$</span>case_count)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>✅ Task Complete! We have created a data field indicating the number of dengue fever cases by village and by epidemiology week.</p>
+</div>
+</div>
 </section>
+</section>
+<section id="eda" class="level2">
+<h2 class="anchored" data-anchor-id="eda"><strong>2.4 EDA</strong></h2>
+<p>Now we will create a series of choropleth maps to visualise the distribution of dengue cases across various counties through August to December.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(dengue_join) <span class="sc">+</span></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"case_count"</span>,</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">style =</span> <span class="st">"quantile"</span>,</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">palette =</span> <span class="st">"Reds"</span>,</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">title =</span> <span class="st">"Number of Dengue Cases"</span>,</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">legend.show =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">popup.vars =</span> <span class="fu">c</span>(<span class="st">"case_count"</span>)) <span class="sc">+</span></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"Dengue Cases in Tainan"</span>,</span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.position =</span> <span class="st">"center"</span>,</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="dv">1</span>,</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>            <span class="at">legend.height =</span> <span class="fl">0.5</span>,</span>
+<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>            <span class="at">legend.width =</span> <span class="fl">0.4</span>,</span>
+<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">frame =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_compass</span>(<span class="at">type =</span> <span class="st">"arrow"</span>, <span class="at">size =</span> <span class="fl">1.5</span>) <span class="sc">+</span></span>
+<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_scale_bar</span>() <span class="sc">+</span></span>
+<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_grid</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Let’s visualise the case distribution by month to see if we can gather any insight about dengue cases and month of the year.</p>
+<p>First classify the weeks into their respective months.</p>
+<ul>
+<li><p>August 2023: 31, 32, 33, 34, 35</p></li>
+<li><p>September 2023: 36, 37, 38, 39</p></li>
+<li><p>October 2023: 40, 41, 42, 43</p></li>
+<li><p>November 2023: 44, 45, 46, 47</p></li>
+<li><p>December 2023: 48, 49, 50</p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>create_dengue_map <span class="ot">&lt;-</span> <span class="cf">function</span>(data, title, start_week, end_week) {</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  map_data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(week_number <span class="sc">&gt;=</span> start_week <span class="sc">&amp;</span> week_number <span class="sc">&lt;=</span> end_week)</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(map_data) <span class="sc">+</span></span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_fill</span>(<span class="st">"case_count"</span>,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">style =</span> <span class="st">"quantile"</span>,</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">palette =</span> <span class="st">"Reds"</span>,</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">title =</span> <span class="fu">paste</span>(<span class="st">"Count"</span>)) <span class="sc">+</span></span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>        <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="fu">paste</span>(title),</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">main.title.position =</span> <span class="st">"center"</span>,</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>              <span class="at">main.title.size =</span> <span class="dv">1</span>,  </span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>              <span class="at">legend.height =</span> <span class="fl">0.5</span>,  </span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>              <span class="at">legend.width =</span> <span class="fl">0.4</span>,  </span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>              <span class="at">frame =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span> </span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>        <span class="fu">tm_grid</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>)</span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>aug_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"August"</span>, <span class="dv">31</span>, <span class="dv">35</span>)</span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>sep_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"September"</span>, <span class="dv">36</span>, <span class="dv">39</span>)</span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>oct_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"October"</span>, <span class="dv">40</span>, <span class="dv">43</span>)</span>
+<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a>nov_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"November"</span>, <span class="dv">44</span>, <span class="dv">47</span>)</span>
+<span id="cb29-25"><a href="#cb29-25" aria-hidden="true" tabindex="-1"></a>dec_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"December"</span>, <span class="dv">48</span>, <span class="dv">50</span>)</span>
+<span id="cb29-26"><a href="#cb29-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-27"><a href="#cb29-27" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(aug_map, sep_map, oct_map, nov_map, dec_map)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Throughout the months from <strong>August</strong> to <strong>December</strong>, a noticeable trend emerges in Tainan’s various counties: the intensity of red on the maps <strong>steadily diminishes</strong>. This reduction suggests a <strong>decline in the number of reported dengue cases each month</strong>. Several factors could contribute to this decline, including <strong>effective control measures</strong> such as prompt medical treatment and public health interventions. Additionally, the <strong>decreasing temperatures towards December</strong> might play a role, as mosquitoes, responsible for dengue transmission, thrive in warmer environments.</p>
+<p>Moreover, another observation is the <strong>spatial clustering of high dengue case numbers in neighboring counties</strong>. Understanding these geographical patterns becomes important for targeted interventions and collaborative efforts among neighboring regions to address and mitigate the prevalence of dengue.</p>
+</div>
+</div>
+<blockquote class="blockquote">
+<p><a href="https://is415-gaa-fathima.netlify.app/take-home_ex/take-home_ex02/take-home_ex02b"><strong>Proceed to Take-home Exercise 2b: Analysis</strong></a></p>
+</blockquote>
+
+
 </section>
 
 </main> <!-- /main -->

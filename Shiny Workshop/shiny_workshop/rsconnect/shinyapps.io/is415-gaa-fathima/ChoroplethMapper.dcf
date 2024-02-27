@@ -1,0 +1,12 @@
+name: ChoroplethMapper
+title: ChoroplethMapper
+username: is415-gaa-fathima
+account: is415-gaa-fathima
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 11223770
+bundleId: 8254866
+url: https://is415-gaa-fathima.shinyapps.io/ChoroplethMapper/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
