@@ -343,18 +343,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>The R packages used in this project are:</p>
 <ol type="1">
 <li><p><code>dplyr</code>: for data manipulation</p></li>
-<li><p><code>maptools</code>: set of tools for reading and manipulating spatial data formats, such as shapefiles</p></li>
-<li><p><code>rgdal</code>: from CRAN, enables users to import, export, and manipulate spatial data within the R environment</p></li>
 <li><p><code>sf</code>: for importing, managing, and processing geospatial data</p></li>
 <li><p><code>tidyverse</code>: a family of other R packages for performing data science tasks such as importing, wrangling, and visualizing data</p></li>
 <li><p><code>tmap</code>: creating static and interactive maps</p></li>
 <li><p><code>ggplot2</code>: used for data visualization</p></li>
-<li><p><code>plotly</code>: interactive graphing library for R</p></li>
 <li><p><code>lubridate</code>: for working with date-time data</p></li>
 </ol>
 <p>Pacman assists us by helping us load R packages that we require.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(dplyr,maptools, rgdal,sf, sp, tidyverse, tmap, ggplot2, plotly, lubridate)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>pacman<span class="sc">::</span><span class="fu">p_load</span>(dplyr,maptools, rgdal,sf, sp, tidyverse, tmap, ggplot2, plotly, lubridate, gifski)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 </section>
 <section id="importing-geospatial-datasets" class="level2">
@@ -497,6 +494,11 @@ Tip
 #   內政部感染縣市代碼 &lt;chr&gt;, 內政部感染鄉鎮代碼 &lt;chr&gt;</code></pre>
 </div>
 </div>
+<p>Filter for cases in Tainan only.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>dengue <span class="ot">&lt;-</span> dengue <span class="sc">%&gt;%</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>              <span class="fu">filter</span>(居住縣市 <span class="sc">==</span> <span class="st">"台南市"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 <p>We must retrieve epidemiological data for weeks 31-50 of the year 2023 from this dataset. We can utilise the <code>lubridate</code> package. Then we will choose the necessary columns, rename them, and save the results in a new dataframe named dengue_clean.</p>
 <p>The columns to be selected and renamed are:</p>
 <ul>
@@ -508,52 +510,52 @@ Tip
 </ul>
 <p>First let’s extract the week numbers between 31-50 from the year 2023 using the <code>lubridate</code> package. To do this, we first check if our columns are in the right format.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>dengue<span class="sc">$</span>發病日 <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(dengue<span class="sc">$</span>發病日)</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>dengue<span class="sc">$</span>week_number <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">format</span>(dengue<span class="sc">$</span>發病日, <span class="st">"%V"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>dengue<span class="sc">$</span>發病日 <span class="ot">&lt;-</span> <span class="fu">as.Date</span>(dengue<span class="sc">$</span>發病日)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>dengue<span class="sc">$</span>week <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">format</span>(dengue<span class="sc">$</span>發病日, <span class="st">"%V"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Note: %v is to represent the ISO 8601 week number of the year.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>dengue_clean <span class="ot">&lt;-</span> dengue <span class="sc">%&gt;%</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(week_number <span class="sc">&gt;=</span> <span class="dv">31</span> <span class="sc">&amp;</span> week_number <span class="sc">&lt;=</span> <span class="dv">50</span> <span class="sc">&amp;</span> <span class="fu">year</span>(發病日) <span class="sc">==</span> <span class="dv">2023</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>dengue_clean <span class="ot">&lt;-</span> dengue <span class="sc">%&gt;%</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(week <span class="sc">&gt;=</span> <span class="dv">31</span> <span class="sc">&amp;</span> week <span class="sc">&lt;=</span> <span class="dv">50</span> <span class="sc">&amp;</span> <span class="fu">year</span>(發病日) <span class="sc">==</span> <span class="dv">2023</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>dengue_clean <span class="ot">&lt;-</span> dengue_clean <span class="sc">%&gt;%</span></span>
-<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">`</span><span class="at">Onset_date</span><span class="st">`</span> <span class="ot">=</span> 發病日,</span>
-<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">X_coordinate</span><span class="st">`</span> <span class="ot">=</span> 最小統計區中心點X,</span>
-<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Y_coordinate</span><span class="st">`</span> <span class="ot">=</span> 最小統計區中心點Y,</span>
-<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">VILLNAME</span><span class="st">`</span> <span class="ot">=</span> 居住村里,</span>
-<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">TOWNNAME</span><span class="st">`</span> <span class="ot">=</span> 居住鄉鎮</span>
-<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>      )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>dengue_clean <span class="ot">&lt;-</span> dengue_clean <span class="sc">%&gt;%</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="st">`</span><span class="at">Onset_date</span><span class="st">`</span> <span class="ot">=</span> 發病日,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">X_coordinate</span><span class="st">`</span> <span class="ot">=</span> 最小統計區中心點X,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Y_coordinate</span><span class="st">`</span> <span class="ot">=</span> 最小統計區中心點Y,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">VILLNAME</span><span class="st">`</span> <span class="ot">=</span> 居住村里,</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">TOWNNAME</span><span class="st">`</span> <span class="ot">=</span> 居住鄉鎮</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>      )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Change the format of X and Y coordinates to numeric data type from character.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>dengue_clean<span class="sc">$</span><span class="st">`</span><span class="at">X_coordinate</span><span class="st">`</span> <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(dengue_clean<span class="sc">$</span><span class="st">`</span><span class="at">X_coordinate</span><span class="st">`</span>)</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>dengue_clean<span class="sc">$</span><span class="st">`</span><span class="at">Y_coordinate</span><span class="st">`</span> <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(dengue_clean<span class="sc">$</span><span class="st">`</span><span class="at">Y_coordinate</span><span class="st">`</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>dengue_clean<span class="sc">$</span><span class="st">`</span><span class="at">X_coordinate</span><span class="st">`</span> <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(dengue_clean<span class="sc">$</span><span class="st">`</span><span class="at">X_coordinate</span><span class="st">`</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>dengue_clean<span class="sc">$</span><span class="st">`</span><span class="at">Y_coordinate</span><span class="st">`</span> <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(dengue_clean<span class="sc">$</span><span class="st">`</span><span class="at">Y_coordinate</span><span class="st">`</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Note: NAs introduced by coercion so we remove them.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>dengue_clean <span class="ot">&lt;-</span> <span class="fu">na.omit</span>(dengue_clean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>dengue_clean <span class="ot">&lt;-</span> <span class="fu">na.omit</span>(dengue_clean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now, we will convert <code>dengue_clean</code> to an sf object by assigning the appropriate CRS, same as counties_sf.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>dengue_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(dengue_clean, <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">'X_coordinate'</span>, <span class="st">'Y_coordinate'</span>), <span class="at">crs =</span> <span class="fu">st_crs</span>(counties_sf))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>dengue_sf <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(dengue_clean, <span class="at">coords =</span> <span class="fu">c</span>(<span class="st">'X_coordinate'</span>, <span class="st">'Y_coordinate'</span>), <span class="at">crs =</span> <span class="fu">st_crs</span>(counties_sf))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>We need to identify which points from the <code>dengue_sf</code> object intersect with our study area defined by the <code>counties_sf</code>.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co">#dengue_counties &lt;- st_intersection(counties_sf,dengue_sf)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">#dengue_counties &lt;- st_intersection(counties_sf,dengue_sf)</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co">#write_rds(dengue_counties, "data/rds/dengue_counties.rds")</span></span>
-<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>dengue_counties <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">"data/rds/dengue_counties.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="co">#write_rds(dengue_counties, "data/rds/dengue_counties.rds")</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>dengue_counties <span class="ot">&lt;-</span> <span class="fu">read_rds</span>(<span class="st">"data/rds/dengue_counties.rds"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Let’s plot and visualise these points on a map.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(counties_sf) <span class="sc">+</span></span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>(<span class="st">"TOWNID"</span>) <span class="sc">+</span></span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(dengue_counties) <span class="sc">+</span></span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_dots</span>(<span class="at">col =</span> <span class="st">"black"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(counties_sf) <span class="sc">+</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_polygons</span>(<span class="st">"TOWNID"</span>) <span class="sc">+</span></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(dengue_counties) <span class="sc">+</span></span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_dots</span>(<span class="at">col =</span> <span class="st">"black"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid" width="672"></p>
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
@@ -572,22 +574,22 @@ Tip
 <p>Our next task is to create a derived dengue fever layer and add a data field indicating the number of dengue fever cases by village and by epidemiology week.</p>
 <p>To do this, we use the <code>group_by</code> function and sum the count of dengue cases (確定病例數).</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>dengue_grouped <span class="ot">&lt;-</span> dengue_clean <span class="sc">%&gt;%</span></span>
-<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(TOWNNAME, VILLNAME, week_number) <span class="sc">%&gt;%</span></span>
-<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">case_count =</span> <span class="fu">sum</span>(確定病例數))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>dengue_grouped <span class="ot">&lt;-</span> dengue_clean <span class="sc">%&gt;%</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(TOWNNAME, VILLNAME, week) <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">case_count =</span> <span class="fu">sum</span>(確定病例數))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Simultaneously, any missing values will be eliminated. Cells containing missing values are denoted by the word ‘none’. So, we will filter out rows where values are not equal to ‘none’ to eliminate missing values</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>dengue_grouped <span class="ot">&lt;-</span> dengue_grouped <span class="sc">%&gt;%</span></span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(VILLNAME <span class="sc">!=</span> <span class="st">"None"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>dengue_grouped <span class="ot">&lt;-</span> dengue_grouped <span class="sc">%&gt;%</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(VILLNAME <span class="sc">!=</span> <span class="st">"None"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Now we will perform a left join to include this new <code>dengue_grouped</code> data into our <code>counties_sf</code> dataframe, using townname and villname as the joining criteria.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>dengue_join <span class="ot">&lt;-</span> <span class="fu">left_join</span>(counties_sf, dengue_grouped, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"TOWNNAME"</span>,<span class="st">"VILLNAME"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>dengue_join <span class="ot">&lt;-</span> <span class="fu">left_join</span>(counties_sf, dengue_grouped, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"TOWNNAME"</span>,<span class="st">"VILLNAME"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>The join has resulted in some NA values. To help with our subsequent analysis, we will replace all NA values with 0.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>dengue_join<span class="sc">$</span>case_count <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(dengue_join<span class="sc">$</span>case_count), <span class="dv">0</span>, dengue_join<span class="sc">$</span>case_count)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>dengue_join<span class="sc">$</span>case_count <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(<span class="fu">is.na</span>(dengue_join<span class="sc">$</span>case_count), <span class="dv">0</span>, dengue_join<span class="sc">$</span>case_count)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
@@ -608,26 +610,169 @@ Tip
 <h2 class="anchored" data-anchor-id="eda"><strong>2.4 EDA</strong></h2>
 <p>Now we will create a series of choropleth maps to visualise the distribution of dengue cases across various counties through August to December.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span>
-<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(dengue_join) <span class="sc">+</span></span>
-<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"case_count"</span>,</span>
-<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">style =</span> <span class="st">"quantile"</span>,</span>
-<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">palette =</span> <span class="st">"Reds"</span>,</span>
-<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">title =</span> <span class="st">"Number of Dengue Cases"</span>,</span>
-<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">legend.show =</span> <span class="cn">TRUE</span>,</span>
-<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">popup.vars =</span> <span class="fu">c</span>(<span class="st">"case_count"</span>)) <span class="sc">+</span></span>
-<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"Dengue Cases in Tainan"</span>,</span>
-<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.position =</span> <span class="st">"center"</span>,</span>
-<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="dv">1</span>,</span>
-<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>            <span class="at">legend.height =</span> <span class="fl">0.5</span>,</span>
-<span id="cb28-13"><a href="#cb28-13" aria-hidden="true" tabindex="-1"></a>            <span class="at">legend.width =</span> <span class="fl">0.4</span>,</span>
-<span id="cb28-14"><a href="#cb28-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">frame =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
-<span id="cb28-15"><a href="#cb28-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
-<span id="cb28-16"><a href="#cb28-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_compass</span>(<span class="at">type =</span> <span class="st">"arrow"</span>, <span class="at">size =</span> <span class="fl">1.5</span>) <span class="sc">+</span></span>
-<span id="cb28-17"><a href="#cb28-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_scale_bar</span>() <span class="sc">+</span></span>
-<span id="cb28-18"><a href="#cb28-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_grid</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(dengue_join) <span class="sc">+</span></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_fill</span>(<span class="st">"case_count"</span>,</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>          <span class="at">style =</span> <span class="st">"quantile"</span>,</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>          <span class="at">palette =</span> <span class="st">"Reds"</span>,</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>          <span class="at">title =</span> <span class="st">"Number of Dengue Cases"</span>,</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>          <span class="at">legend.show =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>          <span class="at">popup.vars =</span> <span class="fu">c</span>(<span class="st">"case_count"</span>)) <span class="sc">+</span></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="st">"Dengue Cases in Tainan"</span>,</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.position =</span> <span class="st">"center"</span>,</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title.size =</span> <span class="dv">1</span>,</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>            <span class="at">legend.height =</span> <span class="fl">0.5</span>,</span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>            <span class="at">legend.width =</span> <span class="fl">0.4</span>,</span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>            <span class="at">frame =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_compass</span>(<span class="at">type =</span> <span class="st">"arrow"</span>, <span class="at">size =</span> <span class="fl">1.5</span>) <span class="sc">+</span></span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_scale_bar</span>() <span class="sc">+</span></span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_grid</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-25-1.png" class="img-fluid" width="672"></p>
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-3.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-4.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-5.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-6.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-7.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-8.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-9.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-10.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-11.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-12.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-13.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-14.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-15.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-16.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-17.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-18.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-19.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-20.png" class="img-fluid" width="672"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-27-21.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Let’s visualise the distribution of dengue cases in various villages across the weeks.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_animation</span>(dengue_week, <span class="at">filename =</span> <span class="st">"dengue_week.gif"</span>, <span class="at">delay =</span> <span class="dv">150</span>, <span class="at">width =</span> <span class="dv">800</span>, <span class="at">height =</span> <span class="dv">600</span>, <span class="at">scale =</span> <span class="fl">1.5</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Creating frames</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>========</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>===</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>===</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>===</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>===</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>====</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Creating animation
+Animation saved to C:\fathimak2020\IS415-GAA\Take-home_Ex\Take-home_Ex02\dengue_week.gif </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">include_graphics</span>(<span class="st">"dengue_week.gif"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="dengue_week.gif" class="img-fluid"></p>
 </div>
 </div>
 <p>Let’s visualise the case distribution by month to see if we can gather any insight about dengue cases and month of the year.</p>
@@ -640,35 +785,35 @@ Tip
 <li><p>December 2023: 48, 49, 50</p></li>
 </ul>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>create_dengue_map <span class="ot">&lt;-</span> <span class="cf">function</span>(data, title, start_week, end_week) {</span>
-<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>  map_data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
-<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(week_number <span class="sc">&gt;=</span> start_week <span class="sc">&amp;</span> week_number <span class="sc">&lt;=</span> end_week)</span>
-<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  </span>
-<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span>
-<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(map_data) <span class="sc">+</span></span>
-<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_fill</span>(<span class="st">"case_count"</span>,</span>
-<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">style =</span> <span class="st">"quantile"</span>,</span>
-<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">palette =</span> <span class="st">"Reds"</span>,</span>
-<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">title =</span> <span class="fu">paste</span>(<span class="st">"Count"</span>)) <span class="sc">+</span></span>
-<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>        <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="fu">paste</span>(title),</span>
-<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">main.title.position =</span> <span class="st">"center"</span>,</span>
-<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a>              <span class="at">main.title.size =</span> <span class="dv">1</span>,  </span>
-<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>              <span class="at">legend.height =</span> <span class="fl">0.5</span>,  </span>
-<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>              <span class="at">legend.width =</span> <span class="fl">0.4</span>,  </span>
-<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>              <span class="at">frame =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
-<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span> </span>
-<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>        <span class="fu">tm_grid</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>)</span>
-<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>aug_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"August"</span>, <span class="dv">31</span>, <span class="dv">35</span>)</span>
-<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>sep_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"September"</span>, <span class="dv">36</span>, <span class="dv">39</span>)</span>
-<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>oct_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"October"</span>, <span class="dv">40</span>, <span class="dv">43</span>)</span>
-<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a>nov_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"November"</span>, <span class="dv">44</span>, <span class="dv">47</span>)</span>
-<span id="cb29-25"><a href="#cb29-25" aria-hidden="true" tabindex="-1"></a>dec_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"December"</span>, <span class="dv">48</span>, <span class="dv">50</span>)</span>
-<span id="cb29-26"><a href="#cb29-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb29-27"><a href="#cb29-27" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(aug_map, sep_map, oct_map, nov_map, dec_map)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>create_dengue_map <span class="ot">&lt;-</span> <span class="cf">function</span>(data, title, start_week, end_week) {</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  map_data <span class="ot">&lt;-</span> data <span class="sc">%&gt;%</span></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">filter</span>(week <span class="sc">&gt;=</span> start_week <span class="sc">&amp;</span> week <span class="sc">&lt;=</span> end_week)</span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_shape</span>(map_data) <span class="sc">+</span></span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_fill</span>(<span class="st">"case_count"</span>,</span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a>            <span class="at">style =</span> <span class="st">"quantile"</span>,</span>
+<span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a>            <span class="at">palette =</span> <span class="st">"Reds"</span>,</span>
+<span id="cb54-10"><a href="#cb54-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">title =</span> <span class="fu">paste</span>(<span class="st">"Count"</span>)) <span class="sc">+</span></span>
+<span id="cb54-11"><a href="#cb54-11" aria-hidden="true" tabindex="-1"></a>        <span class="fu">tm_layout</span>(<span class="at">main.title =</span> <span class="fu">paste</span>(title),</span>
+<span id="cb54-12"><a href="#cb54-12" aria-hidden="true" tabindex="-1"></a>              <span class="at">main.title.position =</span> <span class="st">"center"</span>,</span>
+<span id="cb54-13"><a href="#cb54-13" aria-hidden="true" tabindex="-1"></a>              <span class="at">main.title.size =</span> <span class="dv">1</span>,  </span>
+<span id="cb54-14"><a href="#cb54-14" aria-hidden="true" tabindex="-1"></a>              <span class="at">legend.height =</span> <span class="fl">0.5</span>,  </span>
+<span id="cb54-15"><a href="#cb54-15" aria-hidden="true" tabindex="-1"></a>              <span class="at">legend.width =</span> <span class="fl">0.4</span>,  </span>
+<span id="cb54-16"><a href="#cb54-16" aria-hidden="true" tabindex="-1"></a>              <span class="at">frame =</span> <span class="cn">TRUE</span>) <span class="sc">+</span></span>
+<span id="cb54-17"><a href="#cb54-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">tm_borders</span>(<span class="at">alpha =</span> <span class="fl">0.8</span>) <span class="sc">+</span> </span>
+<span id="cb54-18"><a href="#cb54-18" aria-hidden="true" tabindex="-1"></a>        <span class="fu">tm_grid</span>(<span class="at">alpha =</span> <span class="fl">0.2</span>)</span>
+<span id="cb54-19"><a href="#cb54-19" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb54-20"><a href="#cb54-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-21"><a href="#cb54-21" aria-hidden="true" tabindex="-1"></a>aug_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"August"</span>, <span class="dv">31</span>, <span class="dv">35</span>)</span>
+<span id="cb54-22"><a href="#cb54-22" aria-hidden="true" tabindex="-1"></a>sep_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"September"</span>, <span class="dv">36</span>, <span class="dv">39</span>)</span>
+<span id="cb54-23"><a href="#cb54-23" aria-hidden="true" tabindex="-1"></a>oct_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"October"</span>, <span class="dv">40</span>, <span class="dv">43</span>)</span>
+<span id="cb54-24"><a href="#cb54-24" aria-hidden="true" tabindex="-1"></a>nov_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"November"</span>, <span class="dv">44</span>, <span class="dv">47</span>)</span>
+<span id="cb54-25"><a href="#cb54-25" aria-hidden="true" tabindex="-1"></a>dec_map <span class="ot">&lt;-</span> <span class="fu">create_dengue_map</span>(dengue_join, <span class="st">"December"</span>, <span class="dv">48</span>, <span class="dv">50</span>)</span>
+<span id="cb54-26"><a href="#cb54-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-27"><a href="#cb54-27" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_arrange</span>(aug_map, sep_map, oct_map, nov_map, dec_map)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output-display">
-<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-26-1.png" class="img-fluid" width="672"></p>
+<p><img src="Take-home_Ex02a_files/figure-html/unnamed-chunk-30-1.png" class="img-fluid" width="672"></p>
 </div>
 </div>
 <div class="callout callout-style-default callout-note callout-titled">

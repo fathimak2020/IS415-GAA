@@ -29,6 +29,8 @@ d32 <- subset(tainan_sf, tainan_sf$TOWNID == "D32")
 d39 <- subset(tainan_sf, tainan_sf$TOWNID == "D39")
 villages_sf <- dplyr::bind_rows(list(d01, d02, d04, d06, d07, d08, d32, d39))
 dengue <- read_csv("data/aspatial/Dengue_Daily.csv")
+dengue <- dengue %>%
+              filter(居住縣市 == "台南市")
 dengue$week_number <- as.numeric(format(dengue$發病日, "%V"))
 dengue_clean <- dengue %>%
   filter(week_number >= 31 & week_number <= 50 & year(發病日) == 2023)
@@ -392,6 +394,8 @@ tainan <- st_transform(tainan, crs = 3414)
 tainan <- tainan[tainan$TOWNID %in% c("D01", "D02", "D04", "D06", "D07", "D08", "D32", "D39"), ]
 
 dengue <- read_csv("data/aspatial/Dengue_Daily.csv")
+dengue <- dengue %>%
+              filter(居住縣市 == "台南市")
 
 dengue <- dengue %>%
   rename('X-coordinate' = 最小統計區中心點X,
@@ -690,7 +694,7 @@ We can see the distribution of EHSA classes by using ggplot.
 ggplot(data = ehsa,
        aes(x = classification)) +
   geom_bar()+
-  theme(axis.text.x = element_text(size = 4))
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
 ```
 
 The most number of cases belong to the **oscillating hot spots** class. Oscillating hotspot are villages witnessing regular fluctuations in dengue cases with predictable peaks.
@@ -732,25 +736,25 @@ tm_shape(ehsa_sig) +
 
 ## 2.9 Analysis
 
-Our analysis successfully pinpointed areas in Tainan with higher or lower concentrations of dengue cases, helping health officials and policymakers make better decisions to control the disease.
-
-A clear trend from August to December showed a gradual decrease in reported dengue cases, possibly due to effective measures like timely medical treatment and public health interventions. The lowering temperatures in December might also contribute, as the mosquitoes transmitting dengue thrive less in cooler weather.
-
-The study also revealed shifts in where dengue cases are concentrated within Tainan. These emerging hot or cold spots need more investigation to understand the factors behind these changes. By understanding these dynamics, officials can implement interventions more effectively.
-
-Our observations highlighted clusters of high dengue cases in neighboring villages. Recognizing these patterns is essential for targeted actions and collaboration among nearby regions to reduce the prevalence of dengue.
-
-The top three areas with the most dengue cases are, therefore local authorities should focus their efforts here:
-
-1.  Annan District - Xiqianli
-2.  Annan District - Da'anli
-3.  Yongkang District - Sanhe
-
-The top three areas with fewer cases are, therefore local authorities should maintain efforts here:
-
-1.  Annan District - Chongxueli
-2.  Annan District - Hepingli
-3.  Annan District - Chongshan Lane
+> Our analysis successfully pinpointed areas in Tainan with **higher or lower concentrations of dengue cases**, helping health officials and policymakers make better decisions to control the disease.
+>
+> A clear trend **from August to December** showed a **gradual decrease in reported dengue cases**, possibly due to effective measures like timely medical treatment and public health interventions. The **lowering temperatures in December** might also contribute, as the mosquitoes transmitting dengue thrive less in cooler weather.
+>
+> The study also revealed shifts in where dengue cases are concentrated within Tainan. These emerging hot or cold spots need more investigation to understand the factors behind these changes. By understanding these dynamics, officials can implement interventions more effectively.
+>
+> Our observations highlighted clusters of high dengue cases in neighboring villages. Recognising these patterns is essential for targeted actions and collaboration among nearby regions to reduce the prevalence of dengue.
+>
+> The top three areas with **the most dengue cases** are, therefore local authorities should focus their efforts here:
+>
+> 1.  Annan District - **Xiqianli**
+> 2.  Annan District - **Da'anli**
+> 3.  Yongkang District - **Sanhe**
+>
+> The top three areas with **fewer cases** are, therefore local authorities should maintain efforts here:
+>
+> 1.  Annan District - **Chongxueli**
+> 2.  Annan District - **Hepingli**
+> 3.  Annan District - **Chongshan Lane**
 
 ## 2.11 References
 

@@ -62,26 +62,20 @@ The R packages used in this project are:
 
 1.  `dplyr`: for data manipulation
 
-2.  `maptools`: set of tools for reading and manipulating spatial data formats, such as shapefiles
+2.  `sf`: for importing, managing, and processing geospatial data
 
-3.  `rgdal`: from CRAN, enables users to import, export, and manipulate spatial data within the R environment
+3.  `tidyverse`: a family of other R packages for performing data science tasks such as importing, wrangling, and visualizing data
 
-4.  `sf`: for importing, managing, and processing geospatial data
+4.  `tmap`: creating static and interactive maps
 
-5.  `tidyverse`: a family of other R packages for performing data science tasks such as importing, wrangling, and visualizing data
+5.  `ggplot2`: used for data visualization
 
-6.  `tmap`: creating static and interactive maps
-
-7.  `ggplot2`: used for data visualization
-
-8.  `plotly`: interactive graphing library for R
-
-9.  `lubridate`: for working with date-time data
+6.  `lubridate`: for working with date-time data
 
 Pacman assists us by helping us load R packages that we require.
 
 ```{r}
-pacman::p_load(dplyr,maptools, rgdal,sf, sp, tidyverse, tmap, ggplot2, plotly, lubridate)
+pacman::p_load(dplyr,maptools, rgdal,sf, sp, tidyverse, tmap, ggplot2, plotly, lubridate, gifski)
 
 ```
 
@@ -169,6 +163,13 @@ We use `head()` to gather more information about the dataset.
 head(dengue)
 ```
 
+Filter for cases in Tainan only.
+
+```{r}
+dengue <- dengue %>%
+              filter(居住縣市 == "台南市")
+```
+
 We must retrieve epidemiological data for weeks 31-50 of the year 2023 from this dataset. We can utilise the `lubridate` package. Then we will choose the necessary columns, rename them, and save the results in a new dataframe named dengue_clean.
 
 The columns to be selected and renamed are:
@@ -187,14 +188,14 @@ First let's extract the week numbers between 31-50 from the year 2023 using the 
 
 ```{r}
 dengue$發病日 <- as.Date(dengue$發病日)
-dengue$week_number <- as.numeric(format(dengue$發病日, "%V"))
+dengue$week <- as.numeric(format(dengue$發病日, "%V"))
 ```
 
 Note: %v is to represent the ISO 8601 week number of the year.
 
 ```{r}
 dengue_clean <- dengue %>%
-  filter(week_number >= 31 & week_number <= 50 & year(發病日) == 2023)
+  filter(week >= 31 & week <= 50 & year(發病日) == 2023)
 ```
 
 ```{r}
@@ -257,7 +258,7 @@ To do this, we use the `group_by` function and sum the count of dengue cases (�
 
 ```{r}
 dengue_grouped <- dengue_clean %>%
-  group_by(TOWNNAME, VILLNAME, week_number) %>%
+  group_by(TOWNNAME, VILLNAME, week) %>%
   summarise(case_count = sum(確定病例數))
 ```
 
@@ -312,6 +313,28 @@ tm_shape(dengue_join) +
 
 ```
 
+```{r}
+#| echo: false
+#| results: hide
+dengue_week <- tm_shape(dengue_join) +
+  tm_fill("case_count", palette = "Reds") +
+  tm_borders(lwd = 0.1) +
+  tm_facets(along = "week", free.coords = FALSE)
+
+dengue_week
+```
+
+Let's visualise the distribution of dengue cases in various villages across the weeks.
+
+```{r}
+tmap_animation(dengue_week, filename = "dengue_week.gif", delay = 150, width = 800, height = 600, scale = 1.5)
+
+```
+
+```{r}
+knitr::include_graphics("dengue_week.gif")
+```
+
 Let's visualise the case distribution by month to see if we can gather any insight about dengue cases and month of the year.
 
 First classify the weeks into their respective months.
@@ -329,7 +352,7 @@ First classify the weeks into their respective months.
 ```{r}
 create_dengue_map <- function(data, title, start_week, end_week) {
   map_data <- data %>%
-    filter(week_number >= start_week & week_number <= end_week)
+    filter(week >= start_week & week <= end_week)
   
   tmap_mode("plot")
   tm_shape(map_data) +
