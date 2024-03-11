@@ -1,0 +1,14 @@
+{
+  "hash": "e0c08f293f2e1e90746c515f14b40203",
+  "result": {
+    "markdown": "---\ntitle: \"In-class Ex 08: Calibrating Hedonic Pricing Model for Private Highrise Property with GWR Method\"\nformat:\n  html:\n    toc: true\nexecute: \n  warning: false\n  eval: false\n  freeze: true\n  fig-retine: 3\ndate: \"2024-03-11\"\ndate-modified: \"last-modified\"\n---\n\n::: {.cell}\n\n```{.r .cell-code}\npacman::p_load(olsrr, ggstatsplot, corrplot, ggpubr, sf, spdep, GWmodel, tmap, tidyverse, gtsummary)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nmpsz = st_read(dsn = \"data\", layer = \"MP14_SUBZONE_WEB_PL\")\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nmpsz_svy21 <- st_transform(mpsz, 3414)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nst_crs(mpsz_svy21)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\nst_bbox(mpsz_svy21)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\ncondo_resale = read_csv(\"data/Condo_resale_2015.csv\")\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\ncondo_resale.sf <- st_as_sf(condo_resale,\n                            coords = c(\"LONGITUDE\", \"LATITUDE\"),\n                            crs=4326) %>%\n  st_transform(crs=3414)\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\ncondo_resale.sp <- as_Spatial(condo_resale.res.sf)\ncondo_resale.sp\n```\n:::\n\n::: {.cell}\n\n```{.r .cell-code}\ncorrplot(cor(condo_resale[, 5:23]), diag = FALSE, order = \"AOE\",\n         tl.pos = \"td\", tl.cex = 0.5, method = \"number\", type = \"upper\")\n```\n:::\n\n::: {.cell}\n\n:::",
+    "supporting": [],
+    "filters": [
+      "rmarkdown/pagebreak.lua"
+    ],
+    "includes": {},
+    "engineDependencies": {},
+    "preserve": {},
+    "postProcess": true
+  }
+}
