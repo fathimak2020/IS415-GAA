@@ -1,3 +1,1031 @@
 ---
 title: "Take Home Exercise 3"
+format:
+  html:
+    toc: true
+execute: 
+  warning: false
+  eval: false
+  freeze: true
+  fig-retine: 3
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+date-modified: "last-modified"
 ---
+
+# **Analysing Push-Pull Factors for Public Bus Demand in Singapore Using Spatial Econometric Interaction Modelling**
+
+This project investigates the determinants of public bus demand in Singapore through the application of Spatial Econometric Interaction Modeling. The findings offer valuable insights for urban planners, policymakers, and researchers aiming to optimise mixed-use developments and promote sustainable urban living through a deeper understanding of public bus demand factors.
+
+# **My Responsibilities**
+
+-   Data Preparation for my groupmates to build a Spatial Interaction Model
+
+-   Places of Interest Visualisation
+
+-   Bus Stops in Singapore Visualisation
+
+-   Choropleth Mapping of Population
+
+-   Passenger Volume Trend Analysis
+
+-   Most and Least Popular Stations
+
+-   Bus Stop Centrality
+
+-   Spatial Heatmaps
+
+-   Correlation Matrix
+
+-   Network Analysis
+
+-   Emerging Hot Spot Analysis
+
+## **Data import and preparation**
+
+### **Import R packages**
+
+```{r}
+pacman::p_load(sf, sfdep, tidyverse, tmap, spdep, knitr, leaflet, ggthemes, knitr, plotly,sf, sfdep, tidyverse, tmap, spdep, knitr)
+```
+
+### **Import data**
+
+In our analysis we need these data
+
+-   Subzone planning area and its coordinates (source: [data.gov.sg](https://rstudio-pubs-static.s3.amazonaws.com/data.gov.sg))
+
+-   Bus stop location (source: [LTA DataMall](https://www.mytransport.sg/content/mytransport/home/dataMall.html))
+
+#### **Aspatial data**
+
+```{r}
+bus_nov <- read_csv("data/origin_destination_bus_202311.csv")
+bus_dec <- read_csv("data/origin_destination_bus_202312.csv")
+bus_jan <- read_csv("data/origin_destination_bus_202401.csv")
+hdb <- read_csv("data/hdb.csv")
+population <- read_csv("data/respopagesextod2011to2020.csv")
+```
+
+#### **Geospatial data**
+
+```{r}
+mpsz_sf <- st_read(dsn = "data/geospatial", layer = "MPSZ-2019") %>%
+  st_transform(crs = 3414)
+
+bus_coords <- read_csv("data/bus_stop.csv")
+
+business <- st_read(dsn = "data/geospatial", 
+                   layer = "Business")
+  
+fininst <- st_read(dsn = "data/geospatial", 
+                   layer = "FinServ")
+
+entertainment <- st_read(dsn = "data/geospatial", 
+                   layer = "entertn")
+
+f_and_b <- st_read(dsn = "data/geospatial", 
+                   layer = "F&B")
+
+leisure <- st_read(dsn = "data/geospatial", 
+                   layer = "Liesure&Recreation")
+
+retail <- st_read(dsn = "data/geospatial", 
+                   layer = "Retails") 
+
+residential <- read_csv('data/hdb.csv')
+```
+
+## \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+## 1.0 Data Preparation for SIM
+
+```{r}
+bus_coords_sf <- st_as_sf(bus_coords, coords = c("Longitude", "Latitude"), crs = 4326)
+```
+
+```{r}
+bus_coords_sf <- st_transform(bus_coords_sf, st_crs(mpsz_sf))
+```
+
+### **Plotting Bus Stop Locations**
+
+```{r}
+sg_bus_stops <- st_intersection(bus_coords_sf, mpsz_sf)
+
+tmap_mode("plot")
+
+tmap_options(check.and.fix = TRUE, max.categories = 55)
+
+mpsz_plot <- tm_shape(mpsz_sf) +
+  tm_borders(lwd = 2, group = "mpsz_borders") +  
+  tm_layout(legend.show = FALSE)  
+
+combined_plot <- mpsz_plot +
+  tm_shape(mpsz_sf) +
+  tm_polygons(col = "PLN_AREA_N", title = "Plan Area", group = "mpsz_polygons") +
+  tm_shape(sg_bus_stops) +
+  tm_dots(col = "blue", size = 0.1, group = "bus_coords") +
+  tm_layout(legend.show = FALSE)  
+
+combined_plot
+```
+
+### **Extracting Singapore Bus Stop Locations**
+
+```{r}
+bus_stop_subzone <- st_intersection(sg_bus_stops, mpsz_sf)
+sg_bus_stops$Subzone <- bus_stop_subzone$PLN_AREA_N
+```
+
+### **Adding Subzone Information to Singapore Bus Stop Locations**
+
+```{r}
+merged_data <- merge(bus_coords, sg_bus_stops, by = "BusStopCode", all.x = TRUE)
+bus_coords$Subzone <- merged_data$PLN_AREA_N
+bus_coords <- bus_coords[, c("BusStopCode", "RoadName", "Description", "Subzone", "Latitude", "Longitude")]
+bus_coords_subzone <- bus_coords
+```
+
+```{r}
+#write_rds(bus_coords_subzone, "data/rds/bus_coords_subzone.rds")
+```
+
+## Adding Bus Stop Description, Coordinates and Subzone Information for November 2023
+
+```{r}
+merged_bus_nov <- left_join(bus_nov, bus_coords, by = c("ORIGIN_PT_CODE" = "BusStopCode")) %>%
+  rename(ORIGIN_SUBZONE = Subzone, ORIGIN_DESCRIPTION = Description, ORIGIN_LAT = Latitude, ORIGIN_LONG = Longitude) %>%
+  left_join(bus_coords, by = c("DESTINATION_PT_CODE" = "BusStopCode")) %>%
+  rename(DESTINATION_SUBZONE = Subzone, DESTINATION_DESCRIPTION = Description, DESTINATION_LAT = Latitude, DESTINATION_LONG = Longitude) %>%
+  select(YEAR_MONTH, DAY_TYPE, TIME_PER_HOUR, PT_TYPE, 
+         ORIGIN_PT_CODE, ORIGIN_SUBZONE, ORIGIN_DESCRIPTION, ORIGIN_LAT, ORIGIN_LONG,
+         DESTINATION_PT_CODE, DESTINATION_SUBZONE, DESTINATION_DESCRIPTION, DESTINATION_LAT, DESTINATION_LONG,
+         TOTAL_TRIPS)
+```
+
+## Looking for NA values
+
+```{r}
+missing_stops <- merged_bus_nov %>%
+  summarise(ORIGIN_NA = any(is.na(ORIGIN_DESCRIPTION)),
+            DESTINATION_NA = any(is.na(DESTINATION_DESCRIPTION)),
+            ORIGIN_PT_WITH_NA = ifelse(any(is.na(ORIGIN_DESCRIPTION)), unique(ORIGIN_PT_CODE[is.na(ORIGIN_DESCRIPTION)]), NA),
+            DESTINATION_PT_WITH_NA = ifelse(any(is.na(DESTINATION_DESCRIPTION)), unique(DESTINATION_PT_CODE[is.na(DESTINATION_DESCRIPTION)]), NA))
+
+print(missing_stops)
+```
+
+**Note: Bus stop 65139 is no longer in operation**
+
+```{r}
+merged_bus_nov <- merged_bus_nov %>%
+  filter(!is.na(ORIGIN_DESCRIPTION) & !is.na(DESTINATION_DESCRIPTION))
+```
+
+```{r}
+#write_rds(merged_bus_nov, "data/rds/merged_bus_nov.rds")
+```
+
+## Adding Bus Stop Description, Coordinates and Subzone Information for December 2023
+
+```{r}
+merged_bus_dec <- left_join(bus_dec, bus_coords, by = c("ORIGIN_PT_CODE" = "BusStopCode")) %>%
+  rename(ORIGIN_SUBZONE = Subzone, ORIGIN_DESCRIPTION = Description, ORIGIN_LAT = Latitude, ORIGIN_LONG = Longitude) %>%
+  left_join(bus_coords, by = c("DESTINATION_PT_CODE" = "BusStopCode")) %>%
+  rename(DESTINATION_SUBZONE = Subzone, DESTINATION_DESCRIPTION = Description, DESTINATION_LAT = Latitude, DESTINATION_LONG = Longitude) %>%
+  select(YEAR_MONTH, DAY_TYPE, TIME_PER_HOUR, PT_TYPE, 
+         ORIGIN_PT_CODE, ORIGIN_SUBZONE, ORIGIN_DESCRIPTION, ORIGIN_LAT, ORIGIN_LONG,
+         DESTINATION_PT_CODE, DESTINATION_SUBZONE, DESTINATION_DESCRIPTION, DESTINATION_LAT, DESTINATION_LONG,
+         TOTAL_TRIPS)
+```
+
+## Looking for NA values
+
+```{r}
+missing_stops_dec <- merged_bus_dec %>%
+  summarise(ORIGIN_NA = any(is.na(ORIGIN_DESCRIPTION)),
+            DESTINATION_NA = any(is.na(DESTINATION_DESCRIPTION)),
+            ORIGIN_PT_WITH_NA = ifelse(any(is.na(ORIGIN_DESCRIPTION)), unique(ORIGIN_PT_CODE[is.na(ORIGIN_DESCRIPTION)]), NA),
+            DESTINATION_PT_WITH_NA = ifelse(any(is.na(DESTINATION_DESCRIPTION)), unique(DESTINATION_PT_CODE[is.na(DESTINATION_DESCRIPTION)]), NA))
+
+print(missing_stops_dec)
+```
+
+**Note: Bus stop 65139 is no longer in operation**
+
+```{r}
+merged_bus_dec <- merged_bus_dec %>%
+  filter(!is.na(ORIGIN_DESCRIPTION) & !is.na(DESTINATION_DESCRIPTION))
+```
+
+```{r}
+#write_rds(merged_bus_dec, "data/rds/merged_bus_dec.rds")
+```
+
+## Adding Bus Stop Description, Coordinates and Subzone Information for January 2024
+
+```{r}
+head(bus_jan)
+head(bus_dec)
+```
+
+```{r}
+bus_jan$ORIGIN_PT_CODE <- as.character(bus_jan$ORIGIN_PT_CODE)
+bus_jan$DESTINATION_PT_CODE <- as.character(bus_jan$DESTINATION_PT_CODE)
+
+merged_bus_jan <- left_join(bus_jan, bus_coords, by = c("ORIGIN_PT_CODE" = "BusStopCode")) %>%
+  rename(ORIGIN_SUBZONE = Subzone, ORIGIN_DESCRIPTION = Description, ORIGIN_LAT = Latitude, ORIGIN_LONG = Longitude) %>%
+  left_join(bus_coords, by = c("DESTINATION_PT_CODE" = "BusStopCode")) %>%
+  rename(DESTINATION_SUBZONE = Subzone, DESTINATION_DESCRIPTION = Description, DESTINATION_LAT = Latitude, DESTINATION_LONG = Longitude) %>%
+  select(YEAR_MONTH, DAY_TYPE, TIME_PER_HOUR, PT_TYPE, 
+         ORIGIN_PT_CODE, ORIGIN_SUBZONE, ORIGIN_DESCRIPTION, ORIGIN_LAT, ORIGIN_LONG,
+         DESTINATION_PT_CODE, DESTINATION_SUBZONE, DESTINATION_DESCRIPTION, DESTINATION_LAT, DESTINATION_LONG,
+         TOTAL_TRIPS)
+```
+
+## Looking for NA values
+
+```{r}
+missing_stops_jan <- merged_bus_jan %>%
+  summarise(ORIGIN_NA = any(is.na(ORIGIN_DESCRIPTION)),
+            DESTINATION_NA = any(is.na(DESTINATION_DESCRIPTION)),
+            ORIGIN_PT_WITH_NA = ifelse(any(is.na(ORIGIN_DESCRIPTION)), unique(ORIGIN_PT_CODE[is.na(ORIGIN_DESCRIPTION)]), NA),
+            DESTINATION_PT_WITH_NA = ifelse(any(is.na(DESTINATION_DESCRIPTION)), unique(DESTINATION_PT_CODE[is.na(DESTINATION_DESCRIPTION)]), NA))
+
+print(missing_stops_jan)
+```
+
+**Note: Dropping bus stop 4168 and 9022. Bus stop code should be 5 digits.**
+
+```{r}
+merged_bus_jan <- merged_bus_jan %>%
+  filter(!is.na(ORIGIN_DESCRIPTION) & !is.na(DESTINATION_DESCRIPTION))
+```
+
+```{r}
+#write_rds(merged_bus_jan, "data/rds/merged_bus_jan.rds")
+```
+
+## Creating Spacetime Object for November 2023
+
+### November 2023 Origin Trip Generation
+
+```{r}
+# for spacetime 
+nov_trip_generation_origin <- merged_bus_nov %>%
+   select(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION, ORIGIN_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
+  group_by(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION,ORIGIN_SUBZONE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"),
+           crs=4326)
+```
+
+```{r}
+#write_rds(nov_trip_generation_origin, "data/rds/nov_trip_generation_origin.rds")
+```
+
+### November 2023 Destination Trip Generation
+
+```{r}
+# for spacetime 
+nov_trip_generation_dest <- merged_bus_nov %>%
+   select(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION, DESTINATION_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %>%
+  group_by(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION,DESTINATION_SUBZONE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("DESTINATION_LAT", "DESTINATION_LONG"),
+           crs=4326)
+```
+
+```{r}
+#write_rds(nov_trip_generation_dest, "data/rds/nov_trip_generation_dest.rds")
+```
+
+## Creating Spacetime Object for December 2023
+
+### December 2023 Origin Trip Generation
+
+```{r}
+# for spacetime 
+dec_trip_generation_origin <- merged_bus_dec %>%
+   select(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION, ORIGIN_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
+  group_by(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION,ORIGIN_SUBZONE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"),
+           crs=4326)
+```
+
+```{r}
+#write_rds(dec_trip_generation_origin, "data/rds/dec_trip_generation_origin.rds")
+```
+
+### December 2023 Destination Trip Generation
+
+```{r}
+# for spacetime 
+dec_trip_generation_dest <- merged_bus_dec %>%
+   select(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION, DESTINATION_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %>%
+  group_by(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION,DESTINATION_SUBZONE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("DESTINATION_LAT", "DESTINATION_LONG"),
+           crs=4326)
+```
+
+```{r}
+#write_rds(dec_trip_generation_dest, "data/rds/dec_trip_generation_dest.rds")
+```
+
+## Creating Spacetime Object for January 2024
+
+### January Origin Trip Generation
+
+```{r}
+# for spacetime 
+jan_trip_generation_origin <- merged_bus_jan %>%
+   select(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION, ORIGIN_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
+  group_by(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION,ORIGIN_SUBZONE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"),
+           crs=4326)
+```
+
+```{r}
+#write_rds(jan_trip_generation_origin, "data/rds/jan_trip_generation_origin.rds")
+```
+
+### January Destination Trip Generation
+
+```{r}
+# for spacetime 
+jan_trip_generation_dest <- merged_bus_jan %>%
+   select(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION, DESTINATION_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %>%
+  group_by(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION,DESTINATION_SUBZONE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("DESTINATION_LAT", "DESTINATION_LONG"),
+           crs=4326)
+```
+
+```{r}
+#write_rds(jan_trip_generation_dest, "data/rds/jan_trip_generation_dest.rds")
+```
+
+## Converting .rds files to .csv files
+
+```{r}
+merged_bus_nov <- read_rds("data/rds/merged_bus_nov.rds")
+write.csv(merged_bus_nov, file = "data/merged_bus_nov.csv", row.names = FALSE)
+```
+
+```{r}
+merged_bus_dec <- read_rds("data/rds/merged_bus_dec.rds")
+write.csv(merged_bus_dec, file = "data/merged_bus_dec.csv", row.names = FALSE)
+```
+
+```{r}
+merged_bus_jan <- read_rds("data/rds/merged_bus_jan.rds")
+write.csv(merged_bus_jan, file = "data/merged_bus_jan.csv", row.names = FALSE)
+```
+
+```{r}
+bus_coords_subzone <- read_rds("data/rds/bus_coords_subzone.rds")
+write.csv(bus_coords_subzone, file = "data/bus_coords_subzone.csv", row.names = FALSE)
+```
+
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+# **2.0 Visualising Places of Interest**
+
+Our POIs include:
+
+-   Business
+
+-   Financial Institutions
+
+-   Entertainment
+
+-   F&B Outlets
+
+-   Leisure & Recreation Spots
+
+-   Retail Shops
+
+## **Business**
+
+```{r}
+tmap_mode('view')
+tm_shape(business) + 
+  tm_bubbles(col = 'blue', size = 0.001, alpha = 0.5, border.col = "lightgrey")
+```
+
+## **Financial Institutions**
+
+```{r}
+tmap_mode('view')
+tm_shape(fininst) + 
+  tm_bubbles(col = 'red', size = 0.001, alpha = 0.5, border.col = "lightgrey")
+```
+
+## **Entertainment**
+
+```{r}
+tmap_mode('view')
+tm_shape(entertainment) + 
+  tm_bubbles(col = 'black', size = 0.001, alpha = 0.5, border.col = "lightgrey")
+```
+
+## **F&B Outlets**
+
+```{r}
+tmap_mode('view')
+tm_shape(f_and_b) + 
+  tm_bubbles(col = 'green', size = 0.001, alpha = 0.5, border.col = "lightgrey")
+```
+
+## **Leisure & Recreation Spots**
+
+```{r}
+tmap_mode('view')
+tm_shape(leisure) + 
+  tm_bubbles(col = 'orange', size = 0.001, alpha = 0.5, border.col = "lightgrey")
+```
+
+## **Retail Shops**
+
+```{r}
+tmap_mode('view')
+tm_shape(retail) + 
+  tm_bubbles(col = 'purple', size = 0.001, alpha = 0.5, border.col = "lightgrey")
+```
+
+## Residential Areas
+
+```{r}
+hdb <- st_as_sf(hdb, coords = c("lng", "lat"), crs = 4326)
+```
+
+```{r}
+tmap_mode('view')
+tm_shape(hdb) + 
+  tm_bubbles(col = 'pink', size = 0.001, alpha = 0.5, border.col = "lightgrey")
+```
+
+> ## **Shiny Storyboard**
+
+## 
+
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+# 3.0 Visualising Bus Stops in Singapore
+
+```{r}
+tmap_mode('view')
+tm_shape(sg_bus_stops) + 
+  tm_bubbles(col = 'red', size = 0.01, alpha = 1, border.col = "lightgrey")+
+  tm_shape(mpsz_sf) +
+tm_polygons(alpha = 0.1, id = "PLN_AREA_N")+
+    tmap_options(check.and.fix = TRUE)
+```
+
+> ## **Shiny Storyboard**
+
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+# 4.0 Choropleth Mapping of Population
+
+```{r}
+population <- population %>%
+  filter(Time == 2020) %>%
+  group_by(PA, SZ, AG) %>%
+  summarise(`POP` = sum(`Pop`)) %>%
+  ungroup()%>%
+  pivot_wider(names_from=AG, 
+              values_from=POP) %>%
+  mutate(YOUNG = rowSums(.[3:6])
+         +rowSums(.[12])) %>%
+mutate(`ECONOMY ACTIVE` = rowSums(.[7:11])+
+rowSums(.[13:15]))%>%
+mutate(`AGED`=rowSums(.[16:21])) %>%
+mutate(`TOTAL`=rowSums(.[3:21])) %>%  
+mutate(`DEPENDENCY` = (`YOUNG` + `AGED`)
+/`ECONOMY ACTIVE`) %>%
+  select(`PA`, `SZ`, `YOUNG`, 
+       `ECONOMY ACTIVE`, `AGED`, 
+       `TOTAL`, `DEPENDENCY`)
+```
+
+```{r}
+population <- population %>%
+  mutate_at(.vars = vars(PA, SZ), 
+          .funs = list(toupper)) %>%
+  filter(`ECONOMY ACTIVE` > 0)
+
+```
+
+```{r}
+mpsz_population <- left_join(mpsz_sf, population,
+                          by = c("SUBZONE_N" = "SZ"))
+```
+
+## Young Population
+
+```{r}
+tmap_mode('view')
+tm_shape(mpsz_population)+
+  tm_polygons("YOUNG", 
+              style = "quantile", 
+              palette = "Greens")
+```
+
+## Economically Active Population
+
+```{r}
+tmap_mode('view')
+tm_shape(mpsz_population)+
+  tm_polygons("ECONOMY ACTIVE", 
+              style = "quantile", 
+              palette = "Oranges")
+```
+
+## Aged Population
+
+```{r}
+tmap_mode('view')
+tm_shape(mpsz_population)+
+  tm_polygons("AGED", 
+              style = "quantile", 
+              palette = "Reds")
+```
+
+## Total Population
+
+```{r}
+tmap_mode('view')
+tm_shape(mpsz_population)+
+  tm_polygons("TOTAL", 
+              style = "quantile", 
+              palette = "Blues")
+```
+
+> ## **Shiny Storyboard**
+>
+> -   total
+>
+> -   young
+>
+> -   economically active
+>
+> -   aged
+>
+> -   
+
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+# 5.0 Passenger Volume Trend
+
+```{r}
+create_graph <- function(filename, plot_title, day_type) {
+  data <- read.csv(filename) %>%
+    filter(DAY_TYPE == day_type) %>%
+    select(ORIGIN_PT_CODE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
+    group_by(ORIGIN_PT_CODE, TIME_PER_HOUR) %>%
+    summarise(TRIPS_GENERATED = sum(TOTAL_TRIPS)) %>%
+    ungroup()
+  
+  data$TIME_INTERVAL <- as.factor(data$TIME_PER_HOUR)
+  
+  ggplot(data, aes(x=TIME_INTERVAL, y=TRIPS_GENERATED)) +
+    geom_bar(stat="identity", fill="deepskyblue4") +
+    ggtitle(plot_title) +
+    xlab("Time Interval") +
+    ylab("Total Trips")
+}
+```
+
+## **Weekday Trend**
+
+```{r}
+nov_day <- create_graph("data/merged_bus_nov.csv", "November 2023 Weekday", "WEEKDAY")
+nov_day
+```
+
+```{r}
+dec_day <- create_graph("data/merged_bus_dec.csv", "December 2023 Weekday", "WEEKDAY")
+dec_day
+```
+
+```{r}
+jan_day <- create_graph("data/merged_bus_jan.csv", "January 2024 Weekday", "WEEKDAY")
+jan_day
+```
+
+## **Weekend Trend**
+
+```{r}
+nov_end <- create_graph("data/merged_bus_nov.csv", "November 2023 Weekend", "WEEKENDS/HOLIDAY")
+nov_end
+```
+
+```{r}
+dec_end <- create_graph("data/merged_bus_dec.csv", "December 2023 Weekend", "WEEKENDS/HOLIDAY")
+dec_end
+```
+
+```{r}
+jan_end <- create_graph("data/merged_bus_jan.csv", "January 2024 Weekend", "WEEKENDS/HOLIDAY")
+jan_end
+```
+
+> ## **Shiny Storyboard**
+>
+> -   select month
+>
+> -   weekday/weekend
+>
+> -   insight: identified the peak time intervals
+
+\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+# 6.0 Most and Least Popular Stations during Peak Hours
+
+```{r}
+t5b5 <- function(filename, plot_title, day_type, time_interval){
+  
+  df <- edges <- read_csv(filename) %>% 
+  filter(DAY_TYPE == day_type & TIME_PER_HOUR %in% time_interval) %>%
+  group_by(ORIGIN_PT_CODE) %>%
+  summarise(TRIPS_GENERATED = sum(TOTAL_TRIPS)) %>%
+  na.omit() %>%
+  arrange(desc(TRIPS_GENERATED))
+  
+  t5 <- df %>%
+    head(5) %>%
+    rename(top_5 = ORIGIN_PT_CODE, top_5_trip_count = TRIPS_GENERATED)
+  
+  b5 <- df %>%
+    tail(5) %>%
+    rename(bot_5 = ORIGIN_PT_CODE, bot_5_trip_count = TRIPS_GENERATED)
+
+  return(cbind(t5, b5))
+}
+```
+
+## November 2023 Weekday Top 5 Most and Least Popular Stations by Time of Day
+
+```{r}
+nov_day_trip <- t5b5("data/merged_bus_nov.csv", "Top 5 stations for November 2023 Weekdays", "WEEKDAY", c(6, 7, 17, 18))
+nov_day_morn <- t5b5("data/merged_bus_nov.csv", "Top 5 stations for November 2023 Weekdays 6am - 8am", "WEEKDAY", c(6, 7))
+nov_day_eve <- t5b5("data/merged_bus_nov.csv", "Top 5 stations for November 2023 Weekdays 5pm - 7pm", "WEEKDAY", c(17, 18))
+
+nov_day_trip
+
+```
+
+## December 2023 Weekday Top 5 Most and Least PopularStations by Time of Day
+
+```{r}
+dec_day_trip <- t5b5("data/merged_bus_dec.csv", "Top 5 stations for December 2023 Weekdays", "WEEKDAY", c(6, 7, 17, 18))
+dec_day_morn <- t5b5("data/merged_bus_dec.csv", "Top 5 stations for December 2023 Weekdays 6am - 8am", "WEEKDAY", c(6, 7))
+dec_day_eve <- t5b5("data/merged_bus_dec.csv", "Top 5 stations for December 2023 Weekdays 5pm - 7pm", "WEEKDAY", c(17, 18))
+```
+
+## January 2024 Weekday Top 5 Most and Least Popular Stations by Time of Day
+
+```{r}
+jan_day_trip <- t5b5("data/merged_bus_jan.csv", "Top 5 stations for January 2024 Weekdays", "WEEKDAY", c(6, 7, 17, 18))
+jan_day_morn <- t5b5("data/merged_bus_jan.csv", "Top 5 stations for January 2024 Weekdays 6am - 8am", "WEEKDAY", c(6, 7))
+jan_day_eve <- t5b5("data/merged_bus_jan.csv", "Top 5 stations for January 2024 Weekdays 5pm - t5b5", "WEEKDAY", c(17, 18))
+```
+
+## November 2023 Weekend Top 5 Most and Least Popular Stations by Time of Day
+
+```{r}
+nov_end_trip <- t5b5("data/merged_bus_nov.csv", "Top 5 stations for November 2023 Weekends", "WEEKENDS/HOLIDAY", c(11, 12, 16, 17))
+nov_end_morn <- t5b5("data/merged_bus_nov.csv", "Top 5 stations for November 2023 Weekends 11am - 1pm", "WEEKENDS/HOLIDAY", c(11, 12))
+nov_end_eve <- t5b5("data/merged_bus_nov.csv", "Top 5 stations for November 2023 Weekends 4pm - 6pm", "WEEKENDS/HOLIDAY", c(16, 17))
+```
+
+## December 2023 Weekend Top 5 Most and Least Popular Stations by Time of Day
+
+```{r}
+dec_end_trip <- t5b5("data/merged_bus_dec.csv", "Top 5 stations for December 2023 Weekends", "WEEKENDS/HOLIDAY", c(11, 12, 16, 17))
+dec_end_morn <- t5b5("data/merged_bus_dec.csv", "Top 5 stations for December 2023 Weekends 11am - 1pm", "WEEKENDS/HOLIDAY", c(11, 12))
+dec_end_eve <- t5b5("data/merged_bus_dec.csv", "Top 5 stations for December 2023 Weekends 4pm - 6pm", "WEEKENDS/HOLIDAY", c(16, 17))
+```
+
+## January 2024 Weekend Top 5 Most and Least Popular Stations by Time of Day
+
+```{r}
+jan_end_trip <- t5b5("data/merged_bus_jan.csv", "Top 5 stations for January 2024 Weekends", "WEEKENDS/HOLIDAY", c(11, 12, 16, 17))
+jan_end_morn <- t5b5("data/merged_bus_jan.csv", "Top 5 stations for January 2024 Weekends 11am - 1pm", "WEEKENDS/HOLIDAY", c(11, 12))
+jan_end_evep <- t5b5("data/merged_bus_jan.csv", "Top 5 stations for January 2024 Weekends 4pm - 6pm", "WEEKENDS/HOLIDAY", c(16, 17))
+```
+
+## Heatmap
+
+### November 2023 Weekday Origin
+
+```{r}
+trips_by_origin <- bus_nov %>%
+  filter(DAY_TYPE == "WEEKDAY" & TIME_PER_HOUR >= 6 & TIME_PER_HOUR <= 23) %>%
+  group_by(TIME_PER_HOUR, ORIGIN_PT_CODE) %>%
+  summarise(TOTAL_TRIPS = sum(TOTAL_TRIPS)) %>%
+  ungroup()
+
+kable(head(trips_by_origin), format = "html", digits = 2)
+
+p <- ggplot(data = trips_by_origin,
+            aes(x = TIME_PER_HOUR, y = ORIGIN_PT_CODE, fill = TOTAL_TRIPS)) +
+  geom_tile() +
+  scale_fill_distiller(palette = "Spectral", name = "Passenger Volume") +
+  labs(x = NULL, y = NULL,
+       title = "November 2023 Weekday Passenger Volume by Time of Day and Origin Station") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks = seq(6, 23, by = 1))
+
+print(p)
+```
+
+### November 2023 Weekday Destination
+
+```{r}
+trips_by_dest <- bus_nov %>%
+  filter(DAY_TYPE == "WEEKDAY" & TIME_PER_HOUR >= 6 & TIME_PER_HOUR <= 23) %>%
+  group_by(TIME_PER_HOUR, DESTINATION_PT_CODE) %>%
+  summarise(TOTAL_TRIPS = sum(TOTAL_TRIPS)) %>%
+  ungroup()
+
+kable(head(trips_by_dest), format = "html", digits = 2)
+
+p <- ggplot(data = trips_by_dest,
+            aes(x = TIME_PER_HOUR, y = DESTINATION_PT_CODE, fill = TOTAL_TRIPS)) +
+  geom_tile() +
+  scale_fill_distiller(palette = "Spectral", name = "Passenger Volume") +
+  labs(x = NULL, y = NULL,
+       title = "November 2023 Weekday Passenger Volume by Time of Day and Destination Station") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks = seq(6, 23, by = 1))
+
+print(p)
+
+```
+
+### November 2023 Weekend Origin
+
+```{r}
+trips_by_origin <- bus_nov %>%
+  filter(DAY_TYPE == "WEEKENDS/HOLIDAY" & TIME_PER_HOUR >= 6 & TIME_PER_HOUR <= 23) %>%
+  group_by(TIME_PER_HOUR, ORIGIN_PT_CODE) %>%
+  summarise(TOTAL_TRIPS = sum(TOTAL_TRIPS)) %>%
+  ungroup()
+
+kable(head(trips_by_origin), format = "html", digits = 2)
+
+p <- ggplot(data = trips_by_origin,
+            aes(x = TIME_PER_HOUR, y = ORIGIN_PT_CODE, fill = TOTAL_TRIPS)) +
+  geom_tile() +
+  scale_fill_distiller(palette = "Spectral", name = "Passenger Volume") +
+  labs(x = NULL, y = NULL,
+       title = "November 2023 Weekend Passenger Volume by Time of Day and Origin Station") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks = seq(6, 23, by = 1))
+
+print(p)
+```
+
+### November 2023 Weekend Destination
+
+```{r}
+trips_by_dest <- bus_nov %>%
+  filter(DAY_TYPE == "WEEKENDS/HOLIDAY" & TIME_PER_HOUR >= 6 & TIME_PER_HOUR <= 23) %>%
+  group_by(TIME_PER_HOUR, DESTINATION_PT_CODE) %>%
+  summarise(TOTAL_TRIPS = sum(TOTAL_TRIPS)) %>%
+  ungroup()
+
+kable(head(trips_by_dest), format = "html", digits = 2)
+
+p <- ggplot(data = trips_by_dest,
+            aes(x = TIME_PER_HOUR, y = DESTINATION_PT_CODE, fill = TOTAL_TRIPS)) +
+  geom_tile() +
+  scale_fill_distiller(palette = "Spectral", name = "Passenger Volume") +
+  labs(x = NULL, y = NULL,
+       title = "November 2023 Weekend Passenger Volume by Time of Day and Destination Station") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_x_continuous(breaks = seq(6, 23, by = 1))
+
+print(p)
+```
+
+> ## **Shiny Storyboard**
+>
+> -   select month
+>
+> -   Select Time of Day
+>
+> -   Select Day Type
+>
+> -   Select Most Popular / Least Popular
+>
+> -   Plot on Map
+>
+> -   heatmap
+>
+>     \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+
+# 7.0 Emerging Hot Spot Analysis
+
+## Network analysis
+
+
+
+```{r}
+#| eval: false
+
+bus_coords_subzone <- read_csv("data/bus_coords_subzone.csv") 
+
+# variable that selects the coordinates
+nodes_xy <- bus_coords_subzone %>%
+  select(Longitude, Latitude) %>%
+  rename(x = Longitude, y = Latitude)
+```
+
+Read file containing trip data for the month.
+
+```{r}
+#| eval: false
+
+create_weighted_graph <- function(fn, origin, day, time_period, title){
+  
+  edges <- read_csv(fn) %>% 
+  filter(ORIGIN_PT_CODE == origin & DAY_TYPE == day & TIME_PER_HOUR %in% time_period) %>%
+  rename(weight = "TOTAL_TRIPS") %>%
+  select(ORIGIN_PT_CODE, DESTINATION_PT_CODE, weight) %>%
+  na.omit()
+
+  tr_graph <- tbl_graph(nodes = bus_coords_subzone,
+                        edges = edges,
+                        directed = TRUE)
+  
+  g <- graph_from_data_frame(edges, directed = TRUE, vertices = bus_coords_subzone)
+  
+  ggraph(tr_graph, nodes_xy) +
+    geom_edge_arc(aes(edge_width = weight, circular = FALSE), curvature = 0.33, alpha = 0.1) +
+    scale_edge_width_continuous(range = c(0.5, 8), guide = FALSE) +
+    geom_node_point() +
+    ggtitle(title)
+}
+```
+
+```{r}
+#| eval: false
+
+create_weighted_graph <- function(fn, origin, day, time_period, title) {
+  
+  # Load necessary libraries
+  library(tidyverse)
+  library(igraph)
+  library(ggraph)
+  
+  # Read edges data
+  edges <- read_csv(fn) %>% 
+    filter(ORIGIN_PT_CODE == origin & DAY_TYPE == day & TIME_PER_HOUR %in% time_period) %>%
+    rename(weight = "TOTAL_TRIPS") %>%
+    select(ORIGIN_PT_CODE, DESTINATION_PT_CODE, weight) %>%
+    na.omit()
+  
+  # Check if edges dataframe is empty
+  if (nrow(edges) == 0) {
+    stop("No data found for the specified criteria.")
+  }
+  
+  # Load nodes data (replace 'your_nodes_file.csv' with your actual file)
+  bus_coords_subzone <- read_csv("data/bus_coords_subzone.csv")
+  
+  # Check if nodes dataframe is empty
+  if (nrow(bus_coords_subzone) == 0) {
+    stop("No nodes data found.")
+  }
+  
+  # Create graph
+  tr_graph <- tbl_graph(nodes = bus_coords_subzone, edges = edges, directed = TRUE)
+  
+  # Plot the graph
+  ggraph(tr_graph, nodes_xy) +
+    geom_edge_arc(aes(edge_width = weight, circular = FALSE), curvature = 0.33, alpha = 0.1) +
+    scale_edge_width_continuous(range = c(0.5, 8), guide = FALSE) +
+    geom_node_point() +
+    ggtitle(title)
+}
+
+# Example usage
+create_weighted_graph("data/merged_bus_jan.csv", "46009", "WEEKDAY", c(6, 7), "January Weekday Woodlands Int Bus Stop 6am - 8am")
+
+```
+
+```{r}
+#| eval: false
+
+create_weighted_graph("data/merged_bus_jan.csv", "46009", "WEEKDAY", c(6, 7), "January Weekday Woodlands Int Bus Stop 6am - 8am")
+
+create_weighted_graph("data/merged_bus_jan.csv", "22009", "WEEKDAY", c(17, 18), "January Weekday Boon Lay Int Bus Stop 5pm - 7pm")
+```
+
+# Centrality index
+
+```{r}
+#| eval: false
+
+edges1 <- read_csv("data/merged_bus_jan.csv") %>%
+  rename(weight = "TOTAL_TRIPS") %>%
+  select(ORIGIN_PT_CODE, DESTINATION_PT_CODE, weight) %>%
+  na.omit()
+
+tr_graph1 <- tbl_graph(nodes = bus_coords_subzone, edges = edges1, directed = TRUE) %>% mutate(betweeness_centrality = centrality_betweenness())
+```
+
+## Betweenness Centrality for Bus Stations
+
+```{r}
+#| eval: false
+
+library(leaflet)
+
+g <- tr_graph1 %>%
+  mutate(betweenness_centrality = centrality_betweenness()) %>%
+  ggraph(layout = nodes_xy) + 
+  geom_node_point(aes(size = betweenness_centrality, alpha=0.5)) +
+  geom_node_text(aes(label = ifelse(rank(-betweenness_centrality) <= 5, sub("\\s*(BUS)\\s+STATION", "", stn_name), ""), size = 12)) +
+  theme_graph() +
+  labs(title = "Betweenness Centrality of Bus Stations")
+
+g
+```
+
+```{r}
+#| eval: false
+
+my_map <- leaflet(nodes_xy) %>%
+ addTiles() |>
+  addMarkers(lat=~y, lng=~x)
+my_map
+
+```
+
+
+# Spacetime
+
+```{r}
+merged_bus_nov <- read_rds("data/rds/merged_bus_nov.rds")
+```
+
+```{r}
+```
+
+```{r}
+```
+```{r}
+#| eval: false
+ehsa_tg <- emerging_hotspot_analysis(tg_spacetime, 
+                          "TRIPS GENERATED", 
+                          threshold = 0.05)
+
+ggplot(data = ehsa_tg,
+       aes(x = classification)) +
+  geom_bar()
+
+nb <- st_knn(trip_generation_weekday, 
+             k = 1, symmetric = FALSE)
+head (nb)
+
+wt <- st_weights(nb, style = "W", allow_zero = NULL)
+
+gi_stars <- local_gstar_perm(tg_spacetime$'TRIPS GENERATED', nb, wt, nsim = 499, alternative = "two.sided")
+
+kable(head(gi_stars, n=10))
+
+ehsa_weekday <- trip_generation_weekday %>%
+  cbind(gi_stars)
+```
+
+
+```{r}
+tmap_mode("view")
+
+tm_shape(trip_generation_weekday)+
+tm_bubbles(col = "red",
+           size = 1,
+           border.col = "black",
+           border.lwd = 1)
+```

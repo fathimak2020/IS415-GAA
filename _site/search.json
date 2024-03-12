@@ -1908,7 +1908,7 @@
     "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#data-import-and-preparation",
     "title": "Take Home Exercise 3",
     "section": "Data import and preparation",
-    "text": "Data import and preparation\n\nImport R packages\npacman:: p_load\n\n\nImport data\nIn our analysis we need these data\n\nSubzone planning area and its coordinates (source: data.gov.sg)\nBus stop location (source: LTA DataMall)\n\n\nAspatial data\nThe CSV files are imported with the read_csv() function from the readr package.\n\n\n\nGeospatial data\nThe polygon feature data are imported with the st_read() function from the sf package as simple feature dataframes.\nsf_mpsz &lt;- st_read(dsn = \"data/geospatial\",                     layer = \"MP14_SUBZONE_WEB_PL\")\nsf_busstop &lt;- st_read(dsn = \"data/geospatial\",                     layer = \"BusStop\")"
+    "text": "Data import and preparation\n\nImport R packages\n\npacman::p_load(sf, sfdep, tidyverse, tmap, spdep, knitr, leaflet, ggthemes, knitr, plotly,sf, sfdep, tidyverse, tmap, spdep, knitr)\n\n\n\nImport data\nIn our analysis we need these data\n\nSubzone planning area and its coordinates (source: data.gov.sg)\nBus stop location (source: LTA DataMall)\n\n\nAspatial data\n\nbus_nov &lt;- read_csv(\"data/origin_destination_bus_202311.csv\")\nbus_dec &lt;- read_csv(\"data/origin_destination_bus_202312.csv\")\nbus_jan &lt;- read_csv(\"data/origin_destination_bus_202401.csv\")\nhdb &lt;- read_csv(\"data/hdb.csv\")\npopulation &lt;- read_csv(\"data/respopagesextod2011to2020.csv\")\n\n\n\nGeospatial data\n\nmpsz_sf &lt;- st_read(dsn = \"data/geospatial\", layer = \"MPSZ-2019\") %&gt;%\n  st_transform(crs = 3414)\n\nbus_coords &lt;- read_csv(\"data/bus_stop.csv\")\n\nbusiness &lt;- st_read(dsn = \"data/geospatial\", \n                   layer = \"Business\")\n  \nfininst &lt;- st_read(dsn = \"data/geospatial\", \n                   layer = \"FinServ\")\n\nentertainment &lt;- st_read(dsn = \"data/geospatial\", \n                   layer = \"entertn\")\n\nf_and_b &lt;- st_read(dsn = \"data/geospatial\", \n                   layer = \"F&B\")\n\nleisure &lt;- st_read(dsn = \"data/geospatial\", \n                   layer = \"Liesure&Recreation\")\n\nretail &lt;- st_read(dsn = \"data/geospatial\", \n                   layer = \"Retails\") \n\nresidential &lt;- read_csv('data/hdb.csv')"
   },
   {
     "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#data-cleaning",
@@ -2028,5 +2028,292 @@
     "title": "Hands-on Ex08: Calibrating Hedonic Pricing Model for Private Highrise Property with GWR Method",
     "section": "8.9 Building Hedonic Pricing Models using GWmodel",
     "text": "8.9 Building Hedonic Pricing Models using GWmodel\n\n8.9.1 Building Fixed Bandwidth GWR Model\n\n8.9.1.1 Computing fixed bandwith\n\nbw.fixed &lt;- bw.gwr(formula = SELLING_PRICE ~ AREA_SQM + AGE + PROX_CBD + \n                     PROX_CHILDCARE + PROX_ELDERLYCARE  + PROX_URA_GROWTH_AREA + \n                     PROX_MRT   + PROX_PARK + PROX_PRIMARY_SCH + \n                     PROX_SHOPPING_MALL + PROX_BUS_STOP + NO_Of_UNITS + \n                     FAMILY_FRIENDLY + FREEHOLD, \n                   data=condo_resale.sp, \n                   approach=\"CV\", \n                   kernel=\"gaussian\", \n                   adaptive=FALSE, \n                   longlat=FALSE)\n\n\n\n8.9.1.2 GWModel method - fixed bandwith\n\ngwr.fixed &lt;- gwr.basic(formula = SELLING_PRICE ~ AREA_SQM + AGE + PROX_CBD + \n                         PROX_CHILDCARE + PROX_ELDERLYCARE  + PROX_URA_GROWTH_AREA + \n                         PROX_MRT   + PROX_PARK + PROX_PRIMARY_SCH + \n                         PROX_SHOPPING_MALL + PROX_BUS_STOP + NO_Of_UNITS + \n                         FAMILY_FRIENDLY + FREEHOLD, \n                       data=condo_resale.sp, \n                       bw=bw.fixed, \n                       kernel = 'gaussian', \n                       longlat = FALSE)\n\n\ngwr.fixed\n\n\n\n\n8.9.2 Building Adaptive Bandwidth GWR Model\n\n8.9.2.1 Computing the adaptive bandwidth\n\nbw.adaptive &lt;- bw.gwr(formula = SELLING_PRICE ~ AREA_SQM + AGE  + \n                        PROX_CBD + PROX_CHILDCARE + PROX_ELDERLYCARE    + \n                        PROX_URA_GROWTH_AREA + PROX_MRT + PROX_PARK + \n                        PROX_PRIMARY_SCH + PROX_SHOPPING_MALL   + PROX_BUS_STOP + \n                        NO_Of_UNITS + FAMILY_FRIENDLY + FREEHOLD, \n                      data=condo_resale.sp, \n                      approach=\"CV\", \n                      kernel=\"gaussian\", \n                      adaptive=TRUE, \n                      longlat=FALSE)\n\n\n\n8.9.2.2 Constructing the adaptive bandwidth gwr model\n\ngwr.adaptive &lt;- gwr.basic(formula = SELLING_PRICE ~ AREA_SQM + AGE + \n                            PROX_CBD + PROX_CHILDCARE + PROX_ELDERLYCARE + \n                            PROX_URA_GROWTH_AREA + PROX_MRT + PROX_PARK + \n                            PROX_PRIMARY_SCH + PROX_SHOPPING_MALL + PROX_BUS_STOP + \n                            NO_Of_UNITS + FAMILY_FRIENDLY + FREEHOLD, \n                          data=condo_resale.sp, bw=bw.adaptive, \n                          kernel = 'gaussian', \n                          adaptive=TRUE, \n                          longlat = FALSE)\n\n\ngwr.adaptive\n\n\n\n\n8.9.3 Visualising GWR Output\n\n\n8.9.4 Converting SDF into sf data.frame\n\ncondo_resale.sf.adaptive &lt;- st_as_sf(gwr.adaptive$SDF) %&gt;%\n  st_transform(crs=3414)\n\n\ncondo_resale.sf.adaptive.svy21 &lt;- st_transform(condo_resale.sf.adaptive, 3414)\ncondo_resale.sf.adaptive.svy21  \n\n\ngwr.adaptive.output &lt;- as.data.frame(gwr.adaptive$SDF)\ncondo_resale.sf.adaptive &lt;- cbind(condo_resale.res.sf, as.matrix(gwr.adaptive.output))\n\n\nglimpse(condo_resale.sf.adaptive)\n\n\nsummary(gwr.adaptive$SDF$yhat)\n\n\n\n8.9.5 Visualising local R2\n\ntmap_mode(\"view\")\ntm_shape(mpsz_svy21)+\n  tm_polygons(alpha = 0.1) +\ntm_shape(condo_resale.sf.adaptive) +  \n  tm_dots(col = \"Local_R2\",\n          border.col = \"gray60\",\n          border.lwd = 1) +\n  tm_view(set.zoom.limits = c(11,14))\n\n\ntmap_mode(\"plot\")\n\n\n\n8.9.6 Visualising coefficient estimates\n\ntmap_mode(\"view\")\nAREA_SQM_SE &lt;- tm_shape(mpsz_svy21)+\n  tm_polygons(alpha = 0.1) +\ntm_shape(condo_resale.sf.adaptive) +  \n  tm_dots(col = \"AREA_SQM_SE\",\n          border.col = \"gray60\",\n          border.lwd = 1) +\n  tm_view(set.zoom.limits = c(11,14))\n\nAREA_SQM_TV &lt;- tm_shape(mpsz_svy21)+\n  tm_polygons(alpha = 0.1) +\ntm_shape(condo_resale.sf.adaptive) +  \n  tm_dots(col = \"AREA_SQM_TV\",\n          border.col = \"gray60\",\n          border.lwd = 1) +\n  tm_view(set.zoom.limits = c(11,14))\n\ntmap_arrange(AREA_SQM_SE, AREA_SQM_TV, \n             asp=1, ncol=2,\n             sync = TRUE)\n\n\ntmap_mode(\"plot\")\n\n\n8.9.6.1 By URA Plannign Region\n\ntm_shape(mpsz_svy21[mpsz_svy21$REGION_N==\"CENTRAL REGION\", ])+\n  tm_polygons()+\ntm_shape(condo_resale.sf.adaptive) + \n  tm_bubbles(col = \"Local_R2\",\n           size = 0.15,\n           border.col = \"gray60\",\n           border.lwd = 1)"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html",
+    "title": "Take Home Exercise 3",
+    "section": "",
+    "text": "This project investigates the determinants of public bus demand in Singapore through the application of Spatial Econometric Interaction Modeling. The findings offer valuable insights for urban planners, policymakers, and researchers aiming to optimise mixed-use developments and promote sustainable urban living through a deeper understanding of public bus demand factors."
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#section",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#section",
+    "title": "Take Home Exercise 3",
+    "section": "__________________________________________________________________________",
+    "text": "__________________________________________________________________________"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#data-preparation-for-sim",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#data-preparation-for-sim",
+    "title": "Take Home Exercise 3",
+    "section": "1.0 Data Preparation for SIM",
+    "text": "1.0 Data Preparation for SIM\n\nbus_coords_sf &lt;- st_as_sf(bus_coords, coords = c(\"Longitude\", \"Latitude\"), crs = 4326)\n\n\nbus_coords_sf &lt;- st_transform(bus_coords_sf, st_crs(mpsz_sf))\n\n\nPlotting Bus Stop Locations\n\nsg_bus_stops &lt;- st_intersection(bus_coords_sf, mpsz_sf)\n\ntmap_mode(\"plot\")\n\ntmap_options(check.and.fix = TRUE, max.categories = 55)\n\nmpsz_plot &lt;- tm_shape(mpsz_sf) +\n  tm_borders(lwd = 2, group = \"mpsz_borders\") +  \n  tm_layout(legend.show = FALSE)  \n\ncombined_plot &lt;- mpsz_plot +\n  tm_shape(mpsz_sf) +\n  tm_polygons(col = \"PLN_AREA_N\", title = \"Plan Area\", group = \"mpsz_polygons\") +\n  tm_shape(sg_bus_stops) +\n  tm_dots(col = \"blue\", size = 0.1, group = \"bus_coords\") +\n  tm_layout(legend.show = FALSE)  \n\ncombined_plot\n\n\n\nExtracting Singapore Bus Stop Locations\n\nbus_stop_subzone &lt;- st_intersection(sg_bus_stops, mpsz_sf)\nsg_bus_stops$Subzone &lt;- bus_stop_subzone$PLN_AREA_N\n\n\n\nAdding Subzone Information to Singapore Bus Stop Locations\n\nmerged_data &lt;- merge(bus_coords, sg_bus_stops, by = \"BusStopCode\", all.x = TRUE)\nbus_coords$Subzone &lt;- merged_data$PLN_AREA_N\nbus_coords &lt;- bus_coords[, c(\"BusStopCode\", \"RoadName\", \"Description\", \"Subzone\", \"Latitude\", \"Longitude\")]\nbus_coords_subzone &lt;- bus_coords\n\n\n#write_rds(bus_coords_subzone, \"data/rds/bus_coords_subzone.rds\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#adding-bus-stop-description-coordinates-and-subzone-information-for-november-2023",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#adding-bus-stop-description-coordinates-and-subzone-information-for-november-2023",
+    "title": "Take Home Exercise 3",
+    "section": "Adding Bus Stop Description, Coordinates and Subzone Information for November 2023",
+    "text": "Adding Bus Stop Description, Coordinates and Subzone Information for November 2023\n\nmerged_bus_nov &lt;- left_join(bus_nov, bus_coords, by = c(\"ORIGIN_PT_CODE\" = \"BusStopCode\")) %&gt;%\n  rename(ORIGIN_SUBZONE = Subzone, ORIGIN_DESCRIPTION = Description, ORIGIN_LAT = Latitude, ORIGIN_LONG = Longitude) %&gt;%\n  left_join(bus_coords, by = c(\"DESTINATION_PT_CODE\" = \"BusStopCode\")) %&gt;%\n  rename(DESTINATION_SUBZONE = Subzone, DESTINATION_DESCRIPTION = Description, DESTINATION_LAT = Latitude, DESTINATION_LONG = Longitude) %&gt;%\n  select(YEAR_MONTH, DAY_TYPE, TIME_PER_HOUR, PT_TYPE, \n         ORIGIN_PT_CODE, ORIGIN_SUBZONE, ORIGIN_DESCRIPTION, ORIGIN_LAT, ORIGIN_LONG,\n         DESTINATION_PT_CODE, DESTINATION_SUBZONE, DESTINATION_DESCRIPTION, DESTINATION_LAT, DESTINATION_LONG,\n         TOTAL_TRIPS)"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#looking-for-na-values",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#looking-for-na-values",
+    "title": "Take Home Exercise 3",
+    "section": "Looking for NA values",
+    "text": "Looking for NA values\n\nmissing_stops &lt;- merged_bus_nov %&gt;%\n  summarise(ORIGIN_NA = any(is.na(ORIGIN_DESCRIPTION)),\n            DESTINATION_NA = any(is.na(DESTINATION_DESCRIPTION)),\n            ORIGIN_PT_WITH_NA = ifelse(any(is.na(ORIGIN_DESCRIPTION)), unique(ORIGIN_PT_CODE[is.na(ORIGIN_DESCRIPTION)]), NA),\n            DESTINATION_PT_WITH_NA = ifelse(any(is.na(DESTINATION_DESCRIPTION)), unique(DESTINATION_PT_CODE[is.na(DESTINATION_DESCRIPTION)]), NA))\n\nprint(missing_stops)\n\nNote: Bus stop 65139 is no longer in operation\n\nmerged_bus_nov &lt;- merged_bus_nov %&gt;%\n  filter(!is.na(ORIGIN_DESCRIPTION) & !is.na(DESTINATION_DESCRIPTION))\n\n\n#write_rds(merged_bus_nov, \"data/rds/merged_bus_nov.rds\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#adding-bus-stop-description-coordinates-and-subzone-information-for-december-2023",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#adding-bus-stop-description-coordinates-and-subzone-information-for-december-2023",
+    "title": "Take Home Exercise 3",
+    "section": "Adding Bus Stop Description, Coordinates and Subzone Information for December 2023",
+    "text": "Adding Bus Stop Description, Coordinates and Subzone Information for December 2023\n\nmerged_bus_dec &lt;- left_join(bus_dec, bus_coords, by = c(\"ORIGIN_PT_CODE\" = \"BusStopCode\")) %&gt;%\n  rename(ORIGIN_SUBZONE = Subzone, ORIGIN_DESCRIPTION = Description, ORIGIN_LAT = Latitude, ORIGIN_LONG = Longitude) %&gt;%\n  left_join(bus_coords, by = c(\"DESTINATION_PT_CODE\" = \"BusStopCode\")) %&gt;%\n  rename(DESTINATION_SUBZONE = Subzone, DESTINATION_DESCRIPTION = Description, DESTINATION_LAT = Latitude, DESTINATION_LONG = Longitude) %&gt;%\n  select(YEAR_MONTH, DAY_TYPE, TIME_PER_HOUR, PT_TYPE, \n         ORIGIN_PT_CODE, ORIGIN_SUBZONE, ORIGIN_DESCRIPTION, ORIGIN_LAT, ORIGIN_LONG,\n         DESTINATION_PT_CODE, DESTINATION_SUBZONE, DESTINATION_DESCRIPTION, DESTINATION_LAT, DESTINATION_LONG,\n         TOTAL_TRIPS)"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#looking-for-na-values-1",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#looking-for-na-values-1",
+    "title": "Take Home Exercise 3",
+    "section": "Looking for NA values",
+    "text": "Looking for NA values\n\nmissing_stops_dec &lt;- merged_bus_dec %&gt;%\n  summarise(ORIGIN_NA = any(is.na(ORIGIN_DESCRIPTION)),\n            DESTINATION_NA = any(is.na(DESTINATION_DESCRIPTION)),\n            ORIGIN_PT_WITH_NA = ifelse(any(is.na(ORIGIN_DESCRIPTION)), unique(ORIGIN_PT_CODE[is.na(ORIGIN_DESCRIPTION)]), NA),\n            DESTINATION_PT_WITH_NA = ifelse(any(is.na(DESTINATION_DESCRIPTION)), unique(DESTINATION_PT_CODE[is.na(DESTINATION_DESCRIPTION)]), NA))\n\nprint(missing_stops_dec)\n\nNote: Bus stop 65139 is no longer in operation\n\nmerged_bus_dec &lt;- merged_bus_dec %&gt;%\n  filter(!is.na(ORIGIN_DESCRIPTION) & !is.na(DESTINATION_DESCRIPTION))\n\n\n#write_rds(merged_bus_dec, \"data/rds/merged_bus_dec.rds\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#adding-bus-stop-description-coordinates-and-subzone-information-for-january-2024",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#adding-bus-stop-description-coordinates-and-subzone-information-for-january-2024",
+    "title": "Take Home Exercise 3",
+    "section": "Adding Bus Stop Description, Coordinates and Subzone Information for January 2024",
+    "text": "Adding Bus Stop Description, Coordinates and Subzone Information for January 2024\n\nhead(bus_jan)\nhead(bus_dec)\n\n\nbus_jan$ORIGIN_PT_CODE &lt;- as.character(bus_jan$ORIGIN_PT_CODE)\nbus_jan$DESTINATION_PT_CODE &lt;- as.character(bus_jan$DESTINATION_PT_CODE)\n\nmerged_bus_jan &lt;- left_join(bus_jan, bus_coords, by = c(\"ORIGIN_PT_CODE\" = \"BusStopCode\")) %&gt;%\n  rename(ORIGIN_SUBZONE = Subzone, ORIGIN_DESCRIPTION = Description, ORIGIN_LAT = Latitude, ORIGIN_LONG = Longitude) %&gt;%\n  left_join(bus_coords, by = c(\"DESTINATION_PT_CODE\" = \"BusStopCode\")) %&gt;%\n  rename(DESTINATION_SUBZONE = Subzone, DESTINATION_DESCRIPTION = Description, DESTINATION_LAT = Latitude, DESTINATION_LONG = Longitude) %&gt;%\n  select(YEAR_MONTH, DAY_TYPE, TIME_PER_HOUR, PT_TYPE, \n         ORIGIN_PT_CODE, ORIGIN_SUBZONE, ORIGIN_DESCRIPTION, ORIGIN_LAT, ORIGIN_LONG,\n         DESTINATION_PT_CODE, DESTINATION_SUBZONE, DESTINATION_DESCRIPTION, DESTINATION_LAT, DESTINATION_LONG,\n         TOTAL_TRIPS)"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#looking-for-na-values-2",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#looking-for-na-values-2",
+    "title": "Take Home Exercise 3",
+    "section": "Looking for NA values",
+    "text": "Looking for NA values\n\nmissing_stops_jan &lt;- merged_bus_jan %&gt;%\n  summarise(ORIGIN_NA = any(is.na(ORIGIN_DESCRIPTION)),\n            DESTINATION_NA = any(is.na(DESTINATION_DESCRIPTION)),\n            ORIGIN_PT_WITH_NA = ifelse(any(is.na(ORIGIN_DESCRIPTION)), unique(ORIGIN_PT_CODE[is.na(ORIGIN_DESCRIPTION)]), NA),\n            DESTINATION_PT_WITH_NA = ifelse(any(is.na(DESTINATION_DESCRIPTION)), unique(DESTINATION_PT_CODE[is.na(DESTINATION_DESCRIPTION)]), NA))\n\nprint(missing_stops_jan)\n\nNote: Dropping bus stop 4168 and 9022. Bus stop code should be 5 digits.\n\nmerged_bus_jan &lt;- merged_bus_jan %&gt;%\n  filter(!is.na(ORIGIN_DESCRIPTION) & !is.na(DESTINATION_DESCRIPTION))\n\n\n#write_rds(merged_bus_jan, \"data/rds/merged_bus_jan.rds\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#creating-spacetime-object-for-november-2023",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#creating-spacetime-object-for-november-2023",
+    "title": "Take Home Exercise 3",
+    "section": "Creating Spacetime Object for November 2023",
+    "text": "Creating Spacetime Object for November 2023\n\nNovember 2023 Origin Trip Generation\n\n# for spacetime \nnov_trip_generation_origin &lt;- merged_bus_nov %&gt;%\n   select(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION, ORIGIN_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %&gt;%\n  group_by(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION,ORIGIN_SUBZONE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %&gt;%\n  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %&gt;%\n  ungroup() %&gt;%\n  st_as_sf(coords = c(\"ORIGIN_LAT\", \"ORIGIN_LONG\"),\n           crs=4326)\n\n\n#write_rds(nov_trip_generation_origin, \"data/rds/nov_trip_generation_origin.rds\")\n\n\n\nNovember 2023 Destination Trip Generation\n\n# for spacetime \nnov_trip_generation_dest &lt;- merged_bus_nov %&gt;%\n   select(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION, DESTINATION_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %&gt;%\n  group_by(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION,DESTINATION_SUBZONE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %&gt;%\n  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %&gt;%\n  ungroup() %&gt;%\n  st_as_sf(coords = c(\"DESTINATION_LAT\", \"DESTINATION_LONG\"),\n           crs=4326)\n\n\n#write_rds(nov_trip_generation_dest, \"data/rds/nov_trip_generation_dest.rds\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#creating-spacetime-object-for-december-2023",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#creating-spacetime-object-for-december-2023",
+    "title": "Take Home Exercise 3",
+    "section": "Creating Spacetime Object for December 2023",
+    "text": "Creating Spacetime Object for December 2023\n\nDecember 2023 Origin Trip Generation\n\n# for spacetime \ndec_trip_generation_origin &lt;- merged_bus_dec %&gt;%\n   select(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION, ORIGIN_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %&gt;%\n  group_by(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION,ORIGIN_SUBZONE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %&gt;%\n  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %&gt;%\n  ungroup() %&gt;%\n  st_as_sf(coords = c(\"ORIGIN_LAT\", \"ORIGIN_LONG\"),\n           crs=4326)\n\n\n#write_rds(dec_trip_generation_origin, \"data/rds/dec_trip_generation_origin.rds\")\n\n\n\nDecember 2023 Destination Trip Generation\n\n# for spacetime \ndec_trip_generation_dest &lt;- merged_bus_dec %&gt;%\n   select(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION, DESTINATION_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %&gt;%\n  group_by(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION,DESTINATION_SUBZONE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %&gt;%\n  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %&gt;%\n  ungroup() %&gt;%\n  st_as_sf(coords = c(\"DESTINATION_LAT\", \"DESTINATION_LONG\"),\n           crs=4326)\n\n\n#write_rds(dec_trip_generation_dest, \"data/rds/dec_trip_generation_dest.rds\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#creating-spacetime-object-for-january-2024",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#creating-spacetime-object-for-january-2024",
+    "title": "Take Home Exercise 3",
+    "section": "Creating Spacetime Object for January 2024",
+    "text": "Creating Spacetime Object for January 2024\n\nJanuary Origin Trip Generation\n\n# for spacetime \njan_trip_generation_origin &lt;- merged_bus_jan %&gt;%\n   select(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION, ORIGIN_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %&gt;%\n  group_by(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION,ORIGIN_SUBZONE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %&gt;%\n  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %&gt;%\n  ungroup() %&gt;%\n  st_as_sf(coords = c(\"ORIGIN_LAT\", \"ORIGIN_LONG\"),\n           crs=4326)\n\n\n#write_rds(jan_trip_generation_origin, \"data/rds/jan_trip_generation_origin.rds\")\n\n\n\nJanuary Destination Trip Generation\n\n# for spacetime \njan_trip_generation_dest &lt;- merged_bus_jan %&gt;%\n   select(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION, DESTINATION_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %&gt;%\n  group_by(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION,DESTINATION_SUBZONE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %&gt;%\n  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %&gt;%\n  ungroup() %&gt;%\n  st_as_sf(coords = c(\"DESTINATION_LAT\", \"DESTINATION_LONG\"),\n           crs=4326)\n\n\n#write_rds(jan_trip_generation_dest, \"data/rds/jan_trip_generation_dest.rds\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#converting-.rds-files-to-.csv-files",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#converting-.rds-files-to-.csv-files",
+    "title": "Take Home Exercise 3",
+    "section": "Converting .rds files to .csv files",
+    "text": "Converting .rds files to .csv files\n\nmerged_bus_nov &lt;- read_rds(\"data/rds/merged_bus_nov.rds\")\nwrite.csv(merged_bus_nov, file = \"data/merged_bus_nov.csv\", row.names = FALSE)\n\n\nmerged_bus_dec &lt;- read_rds(\"data/rds/merged_bus_dec.rds\")\nwrite.csv(merged_bus_dec, file = \"data/merged_bus_dec.csv\", row.names = FALSE)\n\n\nmerged_bus_jan &lt;- read_rds(\"data/rds/merged_bus_jan.rds\")\nwrite.csv(merged_bus_jan, file = \"data/merged_bus_jan.csv\", row.names = FALSE)\n\n\nbus_coords_subzone &lt;- read_rds(\"data/rds/bus_coords_subzone.rds\")\nwrite.csv(bus_coords_subzone, file = \"data/bus_coords_subzone.csv\", row.names = FALSE)\n\n_______________________________________________________________________________________________________________"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#business",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#business",
+    "title": "Take Home Exercise 3",
+    "section": "Business",
+    "text": "Business\n\ntmap_mode('view')\ntm_shape(business) + \n  tm_bubbles(col = 'blue', size = 0.001, alpha = 0.5, border.col = \"lightgrey\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#financial-institutions",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#financial-institutions",
+    "title": "Take Home Exercise 3",
+    "section": "Financial Institutions",
+    "text": "Financial Institutions\n\ntmap_mode('view')\ntm_shape(fininst) + \n  tm_bubbles(col = 'red', size = 0.001, alpha = 0.5, border.col = \"lightgrey\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#entertainment",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#entertainment",
+    "title": "Take Home Exercise 3",
+    "section": "Entertainment",
+    "text": "Entertainment\n\ntmap_mode('view')\ntm_shape(entertainment) + \n  tm_bubbles(col = 'black', size = 0.001, alpha = 0.5, border.col = \"lightgrey\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#fb-outlets",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#fb-outlets",
+    "title": "Take Home Exercise 3",
+    "section": "F&B Outlets",
+    "text": "F&B Outlets\n\ntmap_mode('view')\ntm_shape(f_and_b) + \n  tm_bubbles(col = 'green', size = 0.001, alpha = 0.5, border.col = \"lightgrey\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#leisure-recreation-spots",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#leisure-recreation-spots",
+    "title": "Take Home Exercise 3",
+    "section": "Leisure & Recreation Spots",
+    "text": "Leisure & Recreation Spots\n\ntmap_mode('view')\ntm_shape(leisure) + \n  tm_bubbles(col = 'orange', size = 0.001, alpha = 0.5, border.col = \"lightgrey\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#retail-shops",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#retail-shops",
+    "title": "Take Home Exercise 3",
+    "section": "Retail Shops",
+    "text": "Retail Shops\n\ntmap_mode('view')\ntm_shape(retail) + \n  tm_bubbles(col = 'purple', size = 0.001, alpha = 0.5, border.col = \"lightgrey\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#residential-areas",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#residential-areas",
+    "title": "Take Home Exercise 3",
+    "section": "Residential Areas",
+    "text": "Residential Areas\n\nhdb &lt;- st_as_sf(hdb, coords = c(\"lng\", \"lat\"), crs = 4326)\n\n\ntmap_mode('view')\ntm_shape(hdb) + \n  tm_bubbles(col = 'pink', size = 0.001, alpha = 0.5, border.col = \"lightgrey\")\n\n\nShiny Storyboard"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#section-1",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#section-1",
+    "title": "Take Home Exercise 3",
+    "section": "",
+    "text": "_________________________________________________________________________________________________________"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#young-population",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#young-population",
+    "title": "Take Home Exercise 3",
+    "section": "Young Population",
+    "text": "Young Population\n\ntmap_mode('view')\ntm_shape(mpsz_population)+\n  tm_polygons(\"YOUNG\", \n              style = \"quantile\", \n              palette = \"Greens\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#economically-active-population",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#economically-active-population",
+    "title": "Take Home Exercise 3",
+    "section": "Economically Active Population",
+    "text": "Economically Active Population\n\ntmap_mode('view')\ntm_shape(mpsz_population)+\n  tm_polygons(\"ECONOMY ACTIVE\", \n              style = \"quantile\", \n              palette = \"Oranges\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#aged-population",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#aged-population",
+    "title": "Take Home Exercise 3",
+    "section": "Aged Population",
+    "text": "Aged Population\n\ntmap_mode('view')\ntm_shape(mpsz_population)+\n  tm_polygons(\"AGED\", \n              style = \"quantile\", \n              palette = \"Reds\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#total-population",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#total-population",
+    "title": "Take Home Exercise 3",
+    "section": "Total Population",
+    "text": "Total Population\n\ntmap_mode('view')\ntm_shape(mpsz_population)+\n  tm_polygons(\"TOTAL\", \n              style = \"quantile\", \n              palette = \"Blues\")\n\n\nShiny Storyboard\n\ntotal\nyoung\neconomically active\naged\n\n\n\n_______________________________________________________________________________________________________________"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#weekday-trend",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#weekday-trend",
+    "title": "Take Home Exercise 3",
+    "section": "Weekday Trend",
+    "text": "Weekday Trend\n\nnov_day &lt;- create_graph(\"data/merged_bus_nov.csv\", \"November 2023 Weekday\", \"WEEKDAY\")\nnov_day\n\n\ndec_day &lt;- create_graph(\"data/merged_bus_dec.csv\", \"December 2023 Weekday\", \"WEEKDAY\")\ndec_day\n\n\njan_day &lt;- create_graph(\"data/merged_bus_jan.csv\", \"January 2024 Weekday\", \"WEEKDAY\")\njan_day"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#weekend-trend",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#weekend-trend",
+    "title": "Take Home Exercise 3",
+    "section": "Weekend Trend",
+    "text": "Weekend Trend\n\nnov_end &lt;- create_graph(\"data/merged_bus_nov.csv\", \"November 2023 Weekend\", \"WEEKENDS/HOLIDAY\")\nnov_end\n\n\ndec_end &lt;- create_graph(\"data/merged_bus_dec.csv\", \"December 2023 Weekend\", \"WEEKENDS/HOLIDAY\")\ndec_end\n\n\njan_end &lt;- create_graph(\"data/merged_bus_jan.csv\", \"January 2024 Weekend\", \"WEEKENDS/HOLIDAY\")\njan_end\n\n\nShiny Storyboard\n\nselect month\nweekday/weekend\ninsight: identified the peak time intervals\n\n\n_______________________________________________________________________________________________________________"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#november-2023-weekday-top-5-most-and-least-popular-stations-by-time-of-day",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#november-2023-weekday-top-5-most-and-least-popular-stations-by-time-of-day",
+    "title": "Take Home Exercise 3",
+    "section": "November 2023 Weekday Top 5 Most and Least Popular Stations by Time of Day",
+    "text": "November 2023 Weekday Top 5 Most and Least Popular Stations by Time of Day\n\nnov_day_trip &lt;- t5b5(\"data/merged_bus_nov.csv\", \"Top 5 stations for November 2023 Weekdays\", \"WEEKDAY\", c(6, 7, 17, 18))\nnov_day_morn &lt;- t5b5(\"data/merged_bus_nov.csv\", \"Top 5 stations for November 2023 Weekdays 6am - 8am\", \"WEEKDAY\", c(6, 7))\nnov_day_eve &lt;- t5b5(\"data/merged_bus_nov.csv\", \"Top 5 stations for November 2023 Weekdays 5pm - 7pm\", \"WEEKDAY\", c(17, 18))\n\nnov_day_trip"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#december-2023-weekday-top-5-most-and-least-popularstations-by-time-of-day",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#december-2023-weekday-top-5-most-and-least-popularstations-by-time-of-day",
+    "title": "Take Home Exercise 3",
+    "section": "December 2023 Weekday Top 5 Most and Least PopularStations by Time of Day",
+    "text": "December 2023 Weekday Top 5 Most and Least PopularStations by Time of Day\n\ndec_day_trip &lt;- t5b5(\"data/merged_bus_dec.csv\", \"Top 5 stations for December 2023 Weekdays\", \"WEEKDAY\", c(6, 7, 17, 18))\ndec_day_morn &lt;- t5b5(\"data/merged_bus_dec.csv\", \"Top 5 stations for December 2023 Weekdays 6am - 8am\", \"WEEKDAY\", c(6, 7))\ndec_day_eve &lt;- t5b5(\"data/merged_bus_dec.csv\", \"Top 5 stations for December 2023 Weekdays 5pm - 7pm\", \"WEEKDAY\", c(17, 18))"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#january-2024-weekday-top-5-most-and-least-popular-stations-by-time-of-day",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#january-2024-weekday-top-5-most-and-least-popular-stations-by-time-of-day",
+    "title": "Take Home Exercise 3",
+    "section": "January 2024 Weekday Top 5 Most and Least Popular Stations by Time of Day",
+    "text": "January 2024 Weekday Top 5 Most and Least Popular Stations by Time of Day\n\njan_day_trip &lt;- t5b5(\"data/merged_bus_jan.csv\", \"Top 5 stations for January 2024 Weekdays\", \"WEEKDAY\", c(6, 7, 17, 18))\njan_day_morn &lt;- t5b5(\"data/merged_bus_jan.csv\", \"Top 5 stations for January 2024 Weekdays 6am - 8am\", \"WEEKDAY\", c(6, 7))\njan_day_eve &lt;- t5b5(\"data/merged_bus_jan.csv\", \"Top 5 stations for January 2024 Weekdays 5pm - t5b5\", \"WEEKDAY\", c(17, 18))"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#november-2023-weekend-top-5-most-and-least-popular-stations-by-time-of-day",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#november-2023-weekend-top-5-most-and-least-popular-stations-by-time-of-day",
+    "title": "Take Home Exercise 3",
+    "section": "November 2023 Weekend Top 5 Most and Least Popular Stations by Time of Day",
+    "text": "November 2023 Weekend Top 5 Most and Least Popular Stations by Time of Day\n\nnov_end_trip &lt;- t5b5(\"data/merged_bus_nov.csv\", \"Top 5 stations for November 2023 Weekends\", \"WEEKENDS/HOLIDAY\", c(11, 12, 16, 17))\nnov_end_morn &lt;- t5b5(\"data/merged_bus_nov.csv\", \"Top 5 stations for November 2023 Weekends 11am - 1pm\", \"WEEKENDS/HOLIDAY\", c(11, 12))\nnov_end_eve &lt;- t5b5(\"data/merged_bus_nov.csv\", \"Top 5 stations for November 2023 Weekends 4pm - 6pm\", \"WEEKENDS/HOLIDAY\", c(16, 17))"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#december-2023-weekend-top-5-most-and-least-popular-stations-by-time-of-day",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#december-2023-weekend-top-5-most-and-least-popular-stations-by-time-of-day",
+    "title": "Take Home Exercise 3",
+    "section": "December 2023 Weekend Top 5 Most and Least Popular Stations by Time of Day",
+    "text": "December 2023 Weekend Top 5 Most and Least Popular Stations by Time of Day\n\ndec_end_trip &lt;- t5b5(\"data/merged_bus_dec.csv\", \"Top 5 stations for December 2023 Weekends\", \"WEEKENDS/HOLIDAY\", c(11, 12, 16, 17))\ndec_end_morn &lt;- t5b5(\"data/merged_bus_dec.csv\", \"Top 5 stations for December 2023 Weekends 11am - 1pm\", \"WEEKENDS/HOLIDAY\", c(11, 12))\ndec_end_eve &lt;- t5b5(\"data/merged_bus_dec.csv\", \"Top 5 stations for December 2023 Weekends 4pm - 6pm\", \"WEEKENDS/HOLIDAY\", c(16, 17))"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#january-2024-weekend-top-5-most-and-least-popular-stations-by-time-of-day",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#january-2024-weekend-top-5-most-and-least-popular-stations-by-time-of-day",
+    "title": "Take Home Exercise 3",
+    "section": "January 2024 Weekend Top 5 Most and Least Popular Stations by Time of Day",
+    "text": "January 2024 Weekend Top 5 Most and Least Popular Stations by Time of Day\n\njan_end_trip &lt;- t5b5(\"data/merged_bus_jan.csv\", \"Top 5 stations for January 2024 Weekends\", \"WEEKENDS/HOLIDAY\", c(11, 12, 16, 17))\njan_end_morn &lt;- t5b5(\"data/merged_bus_jan.csv\", \"Top 5 stations for January 2024 Weekends 11am - 1pm\", \"WEEKENDS/HOLIDAY\", c(11, 12))\njan_end_evep &lt;- t5b5(\"data/merged_bus_jan.csv\", \"Top 5 stations for January 2024 Weekends 4pm - 6pm\", \"WEEKENDS/HOLIDAY\", c(16, 17))"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#heatmap",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#heatmap",
+    "title": "Take Home Exercise 3",
+    "section": "Heatmap",
+    "text": "Heatmap\n\nNovember 2023 Weekday Origin\n\ntrips_by_origin &lt;- bus_nov %&gt;%\n  filter(DAY_TYPE == \"WEEKDAY\" & TIME_PER_HOUR &gt;= 6 & TIME_PER_HOUR &lt;= 23) %&gt;%\n  group_by(TIME_PER_HOUR, ORIGIN_PT_CODE) %&gt;%\n  summarise(TOTAL_TRIPS = sum(TOTAL_TRIPS)) %&gt;%\n  ungroup()\n\nkable(head(trips_by_origin), format = \"html\", digits = 2)\n\np &lt;- ggplot(data = trips_by_origin,\n            aes(x = TIME_PER_HOUR, y = ORIGIN_PT_CODE, fill = TOTAL_TRIPS)) +\n  geom_tile() +\n  scale_fill_distiller(palette = \"Spectral\", name = \"Passenger Volume\") +\n  labs(x = NULL, y = NULL,\n       title = \"November 2023 Weekday Passenger Volume by Time of Day and Origin Station\") +\n  theme_minimal() +\n  theme(axis.text.x = element_text(angle = 45, hjust = 1),\n        plot.title = element_text(hjust = 0.5)) +\n  scale_x_continuous(breaks = seq(6, 23, by = 1))\n\nprint(p)\n\n\n\nNovember 2023 Weekday Destination\n\ntrips_by_dest &lt;- bus_nov %&gt;%\n  filter(DAY_TYPE == \"WEEKDAY\" & TIME_PER_HOUR &gt;= 6 & TIME_PER_HOUR &lt;= 23) %&gt;%\n  group_by(TIME_PER_HOUR, DESTINATION_PT_CODE) %&gt;%\n  summarise(TOTAL_TRIPS = sum(TOTAL_TRIPS)) %&gt;%\n  ungroup()\n\nkable(head(trips_by_dest), format = \"html\", digits = 2)\n\np &lt;- ggplot(data = trips_by_dest,\n            aes(x = TIME_PER_HOUR, y = DESTINATION_PT_CODE, fill = TOTAL_TRIPS)) +\n  geom_tile() +\n  scale_fill_distiller(palette = \"Spectral\", name = \"Passenger Volume\") +\n  labs(x = NULL, y = NULL,\n       title = \"November 2023 Weekday Passenger Volume by Time of Day and Destination Station\") +\n  theme_minimal() +\n  theme(axis.text.x = element_text(angle = 45, hjust = 1),\n        plot.title = element_text(hjust = 0.5)) +\n  scale_x_continuous(breaks = seq(6, 23, by = 1))\n\nprint(p)\n\n\n\nNovember 2023 Weekend Origin\n\ntrips_by_origin &lt;- bus_nov %&gt;%\n  filter(DAY_TYPE == \"WEEKENDS/HOLIDAY\" & TIME_PER_HOUR &gt;= 6 & TIME_PER_HOUR &lt;= 23) %&gt;%\n  group_by(TIME_PER_HOUR, ORIGIN_PT_CODE) %&gt;%\n  summarise(TOTAL_TRIPS = sum(TOTAL_TRIPS)) %&gt;%\n  ungroup()\n\nkable(head(trips_by_origin), format = \"html\", digits = 2)\n\np &lt;- ggplot(data = trips_by_origin,\n            aes(x = TIME_PER_HOUR, y = ORIGIN_PT_CODE, fill = TOTAL_TRIPS)) +\n  geom_tile() +\n  scale_fill_distiller(palette = \"Spectral\", name = \"Passenger Volume\") +\n  labs(x = NULL, y = NULL,\n       title = \"November 2023 Weekend Passenger Volume by Time of Day and Origin Station\") +\n  theme_minimal() +\n  theme(axis.text.x = element_text(angle = 45, hjust = 1),\n        plot.title = element_text(hjust = 0.5)) +\n  scale_x_continuous(breaks = seq(6, 23, by = 1))\n\nprint(p)\n\n\n\nNovember 2023 Weekend Destination\n\ntrips_by_dest &lt;- bus_nov %&gt;%\n  filter(DAY_TYPE == \"WEEKENDS/HOLIDAY\" & TIME_PER_HOUR &gt;= 6 & TIME_PER_HOUR &lt;= 23) %&gt;%\n  group_by(TIME_PER_HOUR, DESTINATION_PT_CODE) %&gt;%\n  summarise(TOTAL_TRIPS = sum(TOTAL_TRIPS)) %&gt;%\n  ungroup()\n\nkable(head(trips_by_dest), format = \"html\", digits = 2)\n\np &lt;- ggplot(data = trips_by_dest,\n            aes(x = TIME_PER_HOUR, y = DESTINATION_PT_CODE, fill = TOTAL_TRIPS)) +\n  geom_tile() +\n  scale_fill_distiller(palette = \"Spectral\", name = \"Passenger Volume\") +\n  labs(x = NULL, y = NULL,\n       title = \"November 2023 Weekend Passenger Volume by Time of Day and Destination Station\") +\n  theme_minimal() +\n  theme(axis.text.x = element_text(angle = 45, hjust = 1),\n        plot.title = element_text(hjust = 0.5)) +\n  scale_x_continuous(breaks = seq(6, 23, by = 1))\n\nprint(p)\n\n\nShiny Storyboard\n\nselect month\nSelect Time of Day\nSelect Day Type\nSelect Most Popular / Least Popular\nPlot on Map\nheatmap\n_________________________________________________________________________________________________________________________________________________________________"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#network-analysis",
+    "href": "Take-home_Ex/Take-home_Ex03/Take-home_Ex03.html#network-analysis",
+    "title": "Take Home Exercise 3",
+    "section": "Network analysis",
+    "text": "Network analysis\n\nbus_coords_subzone &lt;- read_csv(\"data/bus_coords_subzone.csv\") \n\n# variable that selects the coordinates\nnodes_xy &lt;- bus_coords_subzone %&gt;%\n  select(Longitude, Latitude) %&gt;%\n  rename(x = Longitude, y = Latitude)\n\nRead file containing trip data for the month.\n\ncreate_weighted_graph &lt;- function(fn, origin, day, time_period, title){\n  \n  edges &lt;- read_csv(fn) %&gt;% \n  filter(ORIGIN_PT_CODE == origin & DAY_TYPE == day & TIME_PER_HOUR %in% time_period) %&gt;%\n  rename(weight = \"TOTAL_TRIPS\") %&gt;%\n  select(ORIGIN_PT_CODE, DESTINATION_PT_CODE, weight) %&gt;%\n  na.omit()\n\n  tr_graph &lt;- tbl_graph(nodes = bus_coords_subzone,\n                        edges = edges,\n                        directed = TRUE)\n  \n  g &lt;- graph_from_data_frame(edges, directed = TRUE, vertices = bus_coords_subzone)\n  \n  ggraph(tr_graph, nodes_xy) +\n    geom_edge_arc(aes(edge_width = weight, circular = FALSE), curvature = 0.33, alpha = 0.1) +\n    scale_edge_width_continuous(range = c(0.5, 8), guide = FALSE) +\n    geom_node_point() +\n    ggtitle(title)\n}\n\n\ncreate_weighted_graph &lt;- function(fn, origin, day, time_period, title) {\n  \n  # Load necessary libraries\n  library(tidyverse)\n  library(igraph)\n  library(ggraph)\n  \n  # Read edges data\n  edges &lt;- read_csv(fn) %&gt;% \n    filter(ORIGIN_PT_CODE == origin & DAY_TYPE == day & TIME_PER_HOUR %in% time_period) %&gt;%\n    rename(weight = \"TOTAL_TRIPS\") %&gt;%\n    select(ORIGIN_PT_CODE, DESTINATION_PT_CODE, weight) %&gt;%\n    na.omit()\n  \n  # Check if edges dataframe is empty\n  if (nrow(edges) == 0) {\n    stop(\"No data found for the specified criteria.\")\n  }\n  \n  # Load nodes data (replace 'your_nodes_file.csv' with your actual file)\n  bus_coords_subzone &lt;- read_csv(\"data/bus_coords_subzone.csv\")\n  \n  # Check if nodes dataframe is empty\n  if (nrow(bus_coords_subzone) == 0) {\n    stop(\"No nodes data found.\")\n  }\n  \n  # Create graph\n  tr_graph &lt;- tbl_graph(nodes = bus_coords_subzone, edges = edges, directed = TRUE)\n  \n  # Plot the graph\n  ggraph(tr_graph, nodes_xy) +\n    geom_edge_arc(aes(edge_width = weight, circular = FALSE), curvature = 0.33, alpha = 0.1) +\n    scale_edge_width_continuous(range = c(0.5, 8), guide = FALSE) +\n    geom_node_point() +\n    ggtitle(title)\n}\n\n# Example usage\ncreate_weighted_graph(\"data/merged_bus_jan.csv\", \"46009\", \"WEEKDAY\", c(6, 7), \"January Weekday Woodlands Int Bus Stop 6am - 8am\")\n\n\ncreate_weighted_graph(\"data/merged_bus_jan.csv\", \"46009\", \"WEEKDAY\", c(6, 7), \"January Weekday Woodlands Int Bus Stop 6am - 8am\")\n\ncreate_weighted_graph(\"data/merged_bus_jan.csv\", \"22009\", \"WEEKDAY\", c(17, 18), \"January Weekday Boon Lay Int Bus Stop 5pm - 7pm\")"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/data/geospatial/Retails.html",
+    "href": "Take-home_Ex/Take-home_Ex03/data/geospatial/Retails.html",
+    "title": "IS415 - GAA",
+    "section": "",
+    "text": "&lt;!DOCTYPE qgis PUBLIC ‘http://mrcc.com/qgis.dtd’ ‘SYSTEM’&gt;     dataset\n\n\n       GEOGCRS[“WGS 84”,ENSEMBLE[“World Geodetic System 1984 ensemble”,MEMBER[“World Geodetic System 1984 (Transit)”],MEMBER[“World Geodetic System 1984 (G730)”],MEMBER[“World Geodetic System 1984 (G873)”],MEMBER[“World Geodetic System 1984 (G1150)”],MEMBER[“World Geodetic System 1984 (G1674)”],MEMBER[“World Geodetic System 1984 (G1762)”],MEMBER[“World Geodetic System 1984 (G2139)”],ELLIPSOID[“WGS 84”,6378137,298.257223563,LENGTHUNIT[“metre”,1]],ENSEMBLEACCURACY[2.0]],PRIMEM[“Greenwich”,0,ANGLEUNIT[“degree”,0.0174532925199433]],CS[ellipsoidal,2],AXIS[“geodetic latitude (Lat)”,north,ORDER[1],ANGLEUNIT[“degree”,0.0174532925199433]],AXIS[“geodetic longitude (Lon)”,east,ORDER[2],ANGLEUNIT[“degree”,0.0174532925199433]],USAGE[SCOPE[“Horizontal component of 3D system.”],AREA[“World.”],BBOX[-90,-180,90,180]],ID[“EPSG”,4326]] +proj=longlat +datum=WGS84 +no_defs 3452 4326 EPSG:4326 WGS 84 longlat EPSG:7030 true"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/data/geospatial/FinServ.html",
+    "href": "Take-home_Ex/Take-home_Ex03/data/geospatial/FinServ.html",
+    "title": "IS415 - GAA",
+    "section": "",
+    "text": "&lt;!DOCTYPE qgis PUBLIC ‘http://mrcc.com/qgis.dtd’ ‘SYSTEM’&gt;     dataset\n\n\n       GEOGCRS[“WGS 84”,ENSEMBLE[“World Geodetic System 1984 ensemble”,MEMBER[“World Geodetic System 1984 (Transit)”],MEMBER[“World Geodetic System 1984 (G730)”],MEMBER[“World Geodetic System 1984 (G873)”],MEMBER[“World Geodetic System 1984 (G1150)”],MEMBER[“World Geodetic System 1984 (G1674)”],MEMBER[“World Geodetic System 1984 (G1762)”],MEMBER[“World Geodetic System 1984 (G2139)”],ELLIPSOID[“WGS 84”,6378137,298.257223563,LENGTHUNIT[“metre”,1]],ENSEMBLEACCURACY[2.0]],PRIMEM[“Greenwich”,0,ANGLEUNIT[“degree”,0.0174532925199433]],CS[ellipsoidal,2],AXIS[“geodetic latitude (Lat)”,north,ORDER[1],ANGLEUNIT[“degree”,0.0174532925199433]],AXIS[“geodetic longitude (Lon)”,east,ORDER[2],ANGLEUNIT[“degree”,0.0174532925199433]],USAGE[SCOPE[“Horizontal component of 3D system.”],AREA[“World.”],BBOX[-90,-180,90,180]],ID[“EPSG”,4326]] +proj=longlat +datum=WGS84 +no_defs 3452 4326 EPSG:4326 WGS 84 longlat EPSG:7030 true"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/data/geospatial/entertn.html",
+    "href": "Take-home_Ex/Take-home_Ex03/data/geospatial/entertn.html",
+    "title": "IS415 - GAA",
+    "section": "",
+    "text": "&lt;!DOCTYPE qgis PUBLIC ‘http://mrcc.com/qgis.dtd’ ‘SYSTEM’&gt;     dataset\n\n\n       GEOGCRS[“WGS 84”,ENSEMBLE[“World Geodetic System 1984 ensemble”,MEMBER[“World Geodetic System 1984 (Transit)”],MEMBER[“World Geodetic System 1984 (G730)”],MEMBER[“World Geodetic System 1984 (G873)”],MEMBER[“World Geodetic System 1984 (G1150)”],MEMBER[“World Geodetic System 1984 (G1674)”],MEMBER[“World Geodetic System 1984 (G1762)”],MEMBER[“World Geodetic System 1984 (G2139)”],ELLIPSOID[“WGS 84”,6378137,298.257223563,LENGTHUNIT[“metre”,1]],ENSEMBLEACCURACY[2.0]],PRIMEM[“Greenwich”,0,ANGLEUNIT[“degree”,0.0174532925199433]],CS[ellipsoidal,2],AXIS[“geodetic latitude (Lat)”,north,ORDER[1],ANGLEUNIT[“degree”,0.0174532925199433]],AXIS[“geodetic longitude (Lon)”,east,ORDER[2],ANGLEUNIT[“degree”,0.0174532925199433]],USAGE[SCOPE[“Horizontal component of 3D system.”],AREA[“World.”],BBOX[-90,-180,90,180]],ID[“EPSG”,4326]] +proj=longlat +datum=WGS84 +no_defs 3452 4326 EPSG:4326 WGS 84 longlat EPSG:7030 true"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/data/geospatial/Business.html",
+    "href": "Take-home_Ex/Take-home_Ex03/data/geospatial/Business.html",
+    "title": "IS415 - GAA",
+    "section": "",
+    "text": "&lt;!DOCTYPE qgis PUBLIC ‘http://mrcc.com/qgis.dtd’ ‘SYSTEM’&gt;     dataset\n\n\n       GEOGCRS[“WGS 84”,ENSEMBLE[“World Geodetic System 1984 ensemble”,MEMBER[“World Geodetic System 1984 (Transit)”],MEMBER[“World Geodetic System 1984 (G730)”],MEMBER[“World Geodetic System 1984 (G873)”],MEMBER[“World Geodetic System 1984 (G1150)”],MEMBER[“World Geodetic System 1984 (G1674)”],MEMBER[“World Geodetic System 1984 (G1762)”],MEMBER[“World Geodetic System 1984 (G2139)”],ELLIPSOID[“WGS 84”,6378137,298.257223563,LENGTHUNIT[“metre”,1]],ENSEMBLEACCURACY[2.0]],PRIMEM[“Greenwich”,0,ANGLEUNIT[“degree”,0.0174532925199433]],CS[ellipsoidal,2],AXIS[“geodetic latitude (Lat)”,north,ORDER[1],ANGLEUNIT[“degree”,0.0174532925199433]],AXIS[“geodetic longitude (Lon)”,east,ORDER[2],ANGLEUNIT[“degree”,0.0174532925199433]],USAGE[SCOPE[“Horizontal component of 3D system.”],AREA[“World.”],BBOX[-90,-180,90,180]],ID[“EPSG”,4326]] +proj=longlat +datum=WGS84 +no_defs 3452 4326 EPSG:4326 WGS 84 longlat EPSG:7030 true"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/data/geospatial/F&B.html",
+    "href": "Take-home_Ex/Take-home_Ex03/data/geospatial/F&B.html",
+    "title": "IS415 - GAA",
+    "section": "",
+    "text": "&lt;!DOCTYPE qgis PUBLIC ‘http://mrcc.com/qgis.dtd’ ‘SYSTEM’&gt;     dataset\n\n\n       GEOGCRS[“WGS 84”,ENSEMBLE[“World Geodetic System 1984 ensemble”,MEMBER[“World Geodetic System 1984 (Transit)”],MEMBER[“World Geodetic System 1984 (G730)”],MEMBER[“World Geodetic System 1984 (G873)”],MEMBER[“World Geodetic System 1984 (G1150)”],MEMBER[“World Geodetic System 1984 (G1674)”],MEMBER[“World Geodetic System 1984 (G1762)”],MEMBER[“World Geodetic System 1984 (G2139)”],ELLIPSOID[“WGS 84”,6378137,298.257223563,LENGTHUNIT[“metre”,1]],ENSEMBLEACCURACY[2.0]],PRIMEM[“Greenwich”,0,ANGLEUNIT[“degree”,0.0174532925199433]],CS[ellipsoidal,2],AXIS[“geodetic latitude (Lat)”,north,ORDER[1],ANGLEUNIT[“degree”,0.0174532925199433]],AXIS[“geodetic longitude (Lon)”,east,ORDER[2],ANGLEUNIT[“degree”,0.0174532925199433]],USAGE[SCOPE[“Horizontal component of 3D system.”],AREA[“World.”],BBOX[-90,-180,90,180]],ID[“EPSG”,4326]] +proj=longlat +datum=WGS84 +no_defs 3452 4326 EPSG:4326 WGS 84 longlat EPSG:7030 true"
+  },
+  {
+    "objectID": "Take-home_Ex/Take-home_Ex03/data/geospatial/Liesure&Recreation.html",
+    "href": "Take-home_Ex/Take-home_Ex03/data/geospatial/Liesure&Recreation.html",
+    "title": "IS415 - GAA",
+    "section": "",
+    "text": "&lt;!DOCTYPE qgis PUBLIC ‘http://mrcc.com/qgis.dtd’ ‘SYSTEM’&gt;     dataset\n\n\n       GEOGCRS[“WGS 84”,ENSEMBLE[“World Geodetic System 1984 ensemble”,MEMBER[“World Geodetic System 1984 (Transit)”],MEMBER[“World Geodetic System 1984 (G730)”],MEMBER[“World Geodetic System 1984 (G873)”],MEMBER[“World Geodetic System 1984 (G1150)”],MEMBER[“World Geodetic System 1984 (G1674)”],MEMBER[“World Geodetic System 1984 (G1762)”],MEMBER[“World Geodetic System 1984 (G2139)”],ELLIPSOID[“WGS 84”,6378137,298.257223563,LENGTHUNIT[“metre”,1]],ENSEMBLEACCURACY[2.0]],PRIMEM[“Greenwich”,0,ANGLEUNIT[“degree”,0.0174532925199433]],CS[ellipsoidal,2],AXIS[“geodetic latitude (Lat)”,north,ORDER[1],ANGLEUNIT[“degree”,0.0174532925199433]],AXIS[“geodetic longitude (Lon)”,east,ORDER[2],ANGLEUNIT[“degree”,0.0174532925199433]],USAGE[SCOPE[“Horizontal component of 3D system.”],AREA[“World.”],BBOX[-90,-180,90,180]],ID[“EPSG”,4326]] +proj=longlat +datum=WGS84 +no_defs 3452 4326 EPSG:4326 WGS 84 longlat EPSG:7030 true"
   }
 ]
