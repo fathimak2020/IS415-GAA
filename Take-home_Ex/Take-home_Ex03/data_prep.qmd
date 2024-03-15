@@ -1,0 +1,293 @@
+---
+title: "OD Bus Data Preparation"
+format:
+  html:
+    toc: true
+execute: 
+  warning: false
+  eval: false
+  freeze: true
+  fig-retine: 3
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+date-modified: "last-modified"
+---
+
+```{r}
+pacman::p_load(sf, sfdep, tidyverse, tmap, spdep, knitr, leaflet)
+```
+
+```{r}
+mpsz_sf <- st_read(dsn = "data", layer = "MPSZ-2019") %>%
+  st_transform(crs = 3414)
+```
+
+```{r}
+bus_nov <- read_csv("data/origin_destination_bus_202311.csv")
+bus_dec <- read_csv("data/origin_destination_bus_202312.csv")
+bus_jan <- read_csv("data/origin_destination_bus_202401.csv")
+```
+
+```{r}
+bus_coords <- read_csv("data/bus_stop.csv")
+```
+
+```{r}
+bus_coords_sf <- st_as_sf(bus_coords, coords = c("Longitude", "Latitude"), crs = 4326)
+```
+
+```{r}
+bus_coords_sf <- st_transform(bus_coords_sf, st_crs(mpsz_sf))
+```
+
+```{r}
+sg_bus_stops <- st_intersection(bus_coords_sf, mpsz_sf)
+
+tmap_mode("plot")
+
+tmap_options(check.and.fix = TRUE, max.categories = 55)
+
+mpsz_plot <- tm_shape(mpsz_sf) +
+  tm_borders(lwd = 2, group = "mpsz_borders") +  
+  tm_layout(legend.show = FALSE)  
+
+combined_plot <- mpsz_plot +
+  tm_shape(mpsz_sf) +
+  tm_polygons(col = "PLN_AREA_N", title = "Plan Area", group = "mpsz_polygons") +
+  tm_shape(sg_bus_stops) +
+  tm_dots(col = "blue", size = 0.1, group = "bus_coords") +
+  tm_layout(legend.show = FALSE)  
+
+combined_plot
+```
+
+```{r}
+bus_stop_subzone <- st_intersection(sg_bus_stops, mpsz_sf)
+sg_bus_stops$Subzone <- bus_stop_subzone$PLN_AREA_N
+```
+
+```{r}
+merged_data <- merge(bus_coords, sg_bus_stops, by = "BusStopCode", all.x = TRUE)
+bus_coords$Subzone <- merged_data$PLN_AREA_N
+bus_coords <- bus_coords[, c("BusStopCode", "RoadName", "Description", "Subzone", "Latitude", "Longitude")]
+bus_coords_subzone <- bus_coords
+```
+
+```{r}
+#write_rds(bus_coords_subzone, "data/rds/bus_coords_subzone.rds")
+```
+
+```{r}
+merged_bus_nov <- left_join(bus_nov, bus_coords, by = c("ORIGIN_PT_CODE" = "BusStopCode")) %>%
+  rename(ORIGIN_SUBZONE = Subzone, ORIGIN_DESCRIPTION = Description, ORIGIN_LAT = Latitude, ORIGIN_LONG = Longitude) %>%
+  left_join(bus_coords, by = c("DESTINATION_PT_CODE" = "BusStopCode")) %>%
+  rename(DESTINATION_SUBZONE = Subzone, DESTINATION_DESCRIPTION = Description, DESTINATION_LAT = Latitude, DESTINATION_LONG = Longitude) %>%
+  select(YEAR_MONTH, DAY_TYPE, TIME_PER_HOUR, PT_TYPE, 
+         ORIGIN_PT_CODE, ORIGIN_SUBZONE, ORIGIN_DESCRIPTION, ORIGIN_LAT, ORIGIN_LONG,
+         DESTINATION_PT_CODE, DESTINATION_SUBZONE, DESTINATION_DESCRIPTION, DESTINATION_LAT, DESTINATION_LONG,
+         TOTAL_TRIPS)
+```
+
+```{r}
+missing_stops <- merged_bus_nov %>%
+  summarise(ORIGIN_NA = any(is.na(ORIGIN_DESCRIPTION)),
+            DESTINATION_NA = any(is.na(DESTINATION_DESCRIPTION)),
+            ORIGIN_PT_WITH_NA = ifelse(any(is.na(ORIGIN_DESCRIPTION)), unique(ORIGIN_PT_CODE[is.na(ORIGIN_DESCRIPTION)]), NA),
+            DESTINATION_PT_WITH_NA = ifelse(any(is.na(DESTINATION_DESCRIPTION)), unique(DESTINATION_PT_CODE[is.na(DESTINATION_DESCRIPTION)]), NA))
+
+print(missing_stops)
+```
+
+Note: bus stop 65139 is no longer in operation
+
+```{r}
+merged_bus_nov <- merged_bus_nov %>%
+  filter(!is.na(ORIGIN_DESCRIPTION) & !is.na(DESTINATION_DESCRIPTION))
+```
+
+```{r}
+#write_rds(merged_bus_nov, "data/rds/merged_bus_nov.rds")
+```
+
+```{r}
+merged_bus_dec <- left_join(bus_dec, bus_coords, by = c("ORIGIN_PT_CODE" = "BusStopCode")) %>%
+  rename(ORIGIN_SUBZONE = Subzone, ORIGIN_DESCRIPTION = Description, ORIGIN_LAT = Latitude, ORIGIN_LONG = Longitude) %>%
+  left_join(bus_coords, by = c("DESTINATION_PT_CODE" = "BusStopCode")) %>%
+  rename(DESTINATION_SUBZONE = Subzone, DESTINATION_DESCRIPTION = Description, DESTINATION_LAT = Latitude, DESTINATION_LONG = Longitude) %>%
+  select(YEAR_MONTH, DAY_TYPE, TIME_PER_HOUR, PT_TYPE, 
+         ORIGIN_PT_CODE, ORIGIN_SUBZONE, ORIGIN_DESCRIPTION, ORIGIN_LAT, ORIGIN_LONG,
+         DESTINATION_PT_CODE, DESTINATION_SUBZONE, DESTINATION_DESCRIPTION, DESTINATION_LAT, DESTINATION_LONG,
+         TOTAL_TRIPS)
+```
+
+```{r}
+missing_stops_dec <- merged_bus_dec %>%
+  summarise(ORIGIN_NA = any(is.na(ORIGIN_DESCRIPTION)),
+            DESTINATION_NA = any(is.na(DESTINATION_DESCRIPTION)),
+            ORIGIN_PT_WITH_NA = ifelse(any(is.na(ORIGIN_DESCRIPTION)), unique(ORIGIN_PT_CODE[is.na(ORIGIN_DESCRIPTION)]), NA),
+            DESTINATION_PT_WITH_NA = ifelse(any(is.na(DESTINATION_DESCRIPTION)), unique(DESTINATION_PT_CODE[is.na(DESTINATION_DESCRIPTION)]), NA))
+
+print(missing_stops_dec)
+```
+
+Note: bus stop 65139 is no longer in operation
+
+```{r}
+merged_bus_dec <- merged_bus_dec %>%
+  filter(!is.na(ORIGIN_DESCRIPTION) & !is.na(DESTINATION_DESCRIPTION))
+```
+
+```{r}
+#write_rds(merged_bus_dec, "data/rds/merged_bus_dec.rds")
+```
+
+## January
+
+```{r}
+head(bus_jan)
+head(bus_dec)
+```
+
+```{r}
+bus_jan$ORIGIN_PT_CODE <- as.character(bus_jan$ORIGIN_PT_CODE)
+bus_jan$DESTINATION_PT_CODE <- as.character(bus_jan$DESTINATION_PT_CODE)
+
+merged_bus_jan <- left_join(bus_jan, bus_coords, by = c("ORIGIN_PT_CODE" = "BusStopCode")) %>%
+  rename(ORIGIN_SUBZONE = Subzone, ORIGIN_DESCRIPTION = Description, ORIGIN_LAT = Latitude, ORIGIN_LONG = Longitude) %>%
+  left_join(bus_coords, by = c("DESTINATION_PT_CODE" = "BusStopCode")) %>%
+  rename(DESTINATION_SUBZONE = Subzone, DESTINATION_DESCRIPTION = Description, DESTINATION_LAT = Latitude, DESTINATION_LONG = Longitude) %>%
+  select(YEAR_MONTH, DAY_TYPE, TIME_PER_HOUR, PT_TYPE, 
+         ORIGIN_PT_CODE, ORIGIN_SUBZONE, ORIGIN_DESCRIPTION, ORIGIN_LAT, ORIGIN_LONG,
+         DESTINATION_PT_CODE, DESTINATION_SUBZONE, DESTINATION_DESCRIPTION, DESTINATION_LAT, DESTINATION_LONG,
+         TOTAL_TRIPS)
+```
+
+```{r}
+missing_stops_jan <- merged_bus_jan %>%
+  summarise(ORIGIN_NA = any(is.na(ORIGIN_DESCRIPTION)),
+            DESTINATION_NA = any(is.na(DESTINATION_DESCRIPTION)),
+            ORIGIN_PT_WITH_NA = ifelse(any(is.na(ORIGIN_DESCRIPTION)), unique(ORIGIN_PT_CODE[is.na(ORIGIN_DESCRIPTION)]), NA),
+            DESTINATION_PT_WITH_NA = ifelse(any(is.na(DESTINATION_DESCRIPTION)), unique(DESTINATION_PT_CODE[is.na(DESTINATION_DESCRIPTION)]), NA))
+
+print(missing_stops_jan)
+```
+
+Note: dropping bus stop 4168 and 9022. Bus stop should be 5 digits.
+
+```{r}
+merged_bus_jan <- merged_bus_jan %>%
+  filter(!is.na(ORIGIN_DESCRIPTION) & !is.na(DESTINATION_DESCRIPTION))
+```
+
+```{r}
+#write_rds(merged_bus_jan, "data/rds/merged_bus_jan.rds")
+```
+
+```{r}
+# for spacetime 
+nov_trip_generation_origin <- merged_bus_nov %>%
+   select(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION, ORIGIN_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
+  group_by(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION,ORIGIN_SUBZONE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"),
+           crs=4326)
+```
+
+```{r}
+#write_rds(nov_trip_generation_origin, "data/rds/nov_trip_generation_origin.rds")
+```
+
+```{r}
+# for spacetime 
+nov_trip_generation_dest <- merged_bus_nov %>%
+   select(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION, DESTINATION_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %>%
+  group_by(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION,DESTINATION_SUBZONE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("DESTINATION_LAT", "DESTINATION_LONG"),
+           crs=4326)
+```
+
+```{r}
+#write_rds(nov_trip_generation_dest, "data/rds/nov_trip_generation_dest.rds")
+```
+
+```{r}
+# for spacetime 
+dec_trip_generation_origin <- merged_bus_dec %>%
+   select(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION, ORIGIN_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
+  group_by(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION,ORIGIN_SUBZONE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"),
+           crs=4326)
+```
+
+```{r}
+#write_rds(dec_trip_generation_origin, "data/rds/dec_trip_generation_origin.rds")
+```
+
+```{r}
+# for spacetime 
+dec_trip_generation_dest <- merged_bus_dec %>%
+   select(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION, DESTINATION_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %>%
+  group_by(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION,DESTINATION_SUBZONE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("DESTINATION_LAT", "DESTINATION_LONG"),
+           crs=4326)
+```
+
+```{r}
+#write_rds(dec_trip_generation_dest, "data/rds/dec_trip_generation_dest.rds")
+```
+
+```{r}
+# for spacetime 
+jan_trip_generation_origin <- merged_bus_jan %>%
+   select(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION, ORIGIN_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
+  group_by(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION,ORIGIN_SUBZONE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"),
+           crs=4326)
+```
+
+```{r}
+#write_rds(jan_trip_generation_origin, "data/rds/jan_trip_generation_origin.rds")
+```
+
+```{r}
+# for spacetime 
+jan_trip_generation_dest <- merged_bus_jan %>%
+   select(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION, DESTINATION_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %>%
+  group_by(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION,DESTINATION_SUBZONE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("DESTINATION_LAT", "DESTINATION_LONG"),
+           crs=4326)
+```
+
+```{r}
+#write_rds(jan_trip_generation_dest, "data/rds/jan_trip_generation_dest.rds")
+```
+
+```{r}
+merged_bus_nov <- read_rds("data/rds/merged_bus_nov.rds")
+write.csv(merged_bus_nov, file = "data/merged_bus_nov.csv", row.names = FALSE)
+```
+
+```{r}
+merged_bus_dec <- read_rds("data/rds/merged_bus_dec.rds")
+write.csv(merged_bus_dec, file = "data/merged_bus_dec.csv", row.names = FALSE)
+```
+
+```{r}
+merged_bus_jan <- read_rds("data/rds/merged_bus_jan.rds")
+write.csv(merged_bus_jan, file = "data/merged_bus_jan.csv", row.names = FALSE)
+```
+
+```{r}
+bus_coords_subzone <- read_rds("data/rds/bus_coords_subzone.rds")
+write.csv(bus_coords_subzone, file = "data/bus_coords_subzone.csv", row.names = FALSE)
+```
