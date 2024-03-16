@@ -20,7 +20,7 @@ This project investigates the determinants of public bus demand in Singapore thr
 
 -   Data Preparation
 
--   Places of Interest Visualisation
+-   Places of Interest Visualisation (Business, Financial Institutions, Entertainment, F&B Outlets, Leisure & Recreation Spots, Retail Shops, Schools, Hospitals and Polyclinic, Residential Areas)
 
 -   Bus Stops in Singapore Visualisation
 
@@ -36,7 +36,7 @@ This project investigates the determinants of public bus demand in Singapore thr
 
 -   Bus Stop Centrality
 
--   Adjacency Matrix
+-   Correlation Matrix
 
 -   Emerging Hot Spot Analysis
 
@@ -112,8 +112,6 @@ schools <- read_csv('data/schoolsclean.csv')
 hospitals <- read_csv('data/HospitalsPolyclinics v_2024.csv')
 ```
 
-## \_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
-
 ## 1.0 Data Preparation
 
 ```{r}
@@ -156,6 +154,8 @@ bus_coords_subzone <- rbind(bus_coords_subzone, punggol_end)
 #write_rds(bus_coords_subzone, "data/rds/bus_coords_subzone.rds")
 ```
 
+Note: Bus Stop 65139 is missing from bus_coords, manually inserting a record for it.
+
 ## Adding Bus Stop Description, Coordinates and Subzone Information for November 2023
 
 ```{r}
@@ -178,6 +178,8 @@ merged_bus_nov <- merged_bus_nov %>%
          DESTINATION_LONG = ifelse(DESTINATION_PT_CODE == 65139, 103.9107, DESTINATION_LONG))
 ```
 
+Note: Bus Stop 65139 is missing from bus_coords, manually inserting a record for it.
+
 ## Looking for NA values
 
 ```{r}
@@ -189,8 +191,6 @@ missing_stops <- merged_bus_nov %>%
 
 print(missing_stops)
 ```
-
-**Note: Bus stop 65139 is no longer in operation**
 
 ```{r}
 #write_rds(merged_bus_nov, "data/rds/merged_bus_nov.rds")
@@ -217,6 +217,8 @@ merged_bus_dec <- merged_bus_dec %>%
          DESTINATION_LONG = ifelse(DESTINATION_PT_CODE == 65139, 103.9107, DESTINATION_LONG))
 ```
 
+Note: Bus Stop 65139 is missing from bus_coords, manually inserting a record for it.
+
 ## Looking for NA values
 
 ```{r}
@@ -228,8 +230,6 @@ missing_stops_dec <- merged_bus_dec %>%
 
 print(missing_stops_dec)
 ```
-
-**Note: Bus stop 65139 is no longer in operation**
 
 ```{r}
 #write_rds(merged_bus_dec, "data/rds/merged_bus_dec.rds")
@@ -250,6 +250,8 @@ bus_jan$DESTINATION_PT_CODE <- ifelse(nchar(bus_jan$DESTINATION_PT_CODE) == 4,
                                        bus_jan$DESTINATION_PT_CODE)
 
 ```
+
+Note: 0s have been omitted from some bus stop codes, making them 4 digits long only. Bus stop codes have to be 5 digits long so adding a 0 infront of codes that are 4 digits long.
 
 ```{r}
 bus_jan$ORIGIN_PT_CODE <- as.character(bus_jan$ORIGIN_PT_CODE)
@@ -277,8 +279,6 @@ missing_stops_jan <- merged_bus_jan %>%
 print(missing_stops_jan)
 ```
 
-**Note: Dropping bus stop 4168 and 9022. Bus stop code should be 5 digits.**
-
 ```{r}
 #write_rds(merged_bus_jan, "data/rds/merged_bus_jan.rds")
 ```
@@ -288,14 +288,25 @@ print(missing_stops_jan)
 ### November 2023 Origin Trip Generation
 
 ```{r}
-# for spacetime 
-# nov_trip_generation_origin <- merged_bus_nov %>%
-#    select(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION, ORIGIN_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
-#   group_by(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION,ORIGIN_SUBZONE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
-#   summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
-#   ungroup() %>%
-#   st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"),
-#            crs=4326)
+#for spacetime
+nov_trip_generation_origin <- merged_bus_nov %>%
+   select(ORIGIN_PT_CODE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
+  group_by(ORIGIN_PT_CODE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
+  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+  ungroup() %>%
+  st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"),
+           crs=4326)
+```
+
+```{r}
+nov_org_tg_spacetime <- as_spacetime(nov_trip_generation_origin, 
+                    "ORIGIN_PT_CODE", 
+                    "TIME_PER_HOUR")
+nov_org_tg_spacetime
+```
+
+```{r}
+is_spacetime_cube(nov_org_tg_spacetime)
 ```
 
 ```{r}
@@ -307,12 +318,23 @@ print(missing_stops_jan)
 ```{r}
 # for spacetime 
 # nov_trip_generation_dest <- merged_bus_nov %>%
-#    select(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION, DESTINATION_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %>%
-#   group_by(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION,DESTINATION_SUBZONE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %>%
+#    select(DESTINATION_PT_CODE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %>%
+#   group_by(DESTINATION_PT_CODE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %>%
 #   summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
 #   ungroup() %>%
 #   st_as_sf(coords = c("DESTINATION_LAT", "DESTINATION_LONG"),
 #            crs=4326)
+```
+
+```{r}
+nov_dest_tg_spacetime <- as_spacetime(nov_trip_generation_dest, 
+                    "DESTINATION_PT_CODE", 
+                    "TIME_PER_HOUR")
+nov_dest_tg_spacetime
+```
+
+```{r}
+is_spacetime_cube(nov_dest_tg_spacetime)
 ```
 
 ```{r}
@@ -326,12 +348,23 @@ print(missing_stops_jan)
 ```{r}
 # for spacetime 
 # dec_trip_generation_origin <- merged_bus_dec %>%
-#    select(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION, ORIGIN_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
-#   group_by(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION,ORIGIN_SUBZONE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
+#    select(ORIGIN_PT_CODE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
+#   group_by(ORIGIN_PT_CODE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
 #   summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
 #   ungroup() %>%
 #   st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"),
 #            crs=4326)
+```
+
+```{r}
+dec_org_tg_spacetime <- as_spacetime(dec_trip_generation_origin, 
+                    "ORIGIN_PT_CODE", 
+                    "TIME_PER_HOUR")
+dec_org_tg_spacetime
+```
+
+```{r}
+is_spacetime_cube(dec_org_tg_spacetime)
 ```
 
 ```{r}
@@ -343,12 +376,23 @@ print(missing_stops_jan)
 ```{r}
 # for spacetime 
 # dec_trip_generation_dest <- merged_bus_dec %>%
-#    select(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION, DESTINATION_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %>%
-#   group_by(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION,DESTINATION_SUBZONE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %>%
+#    select(DESTINATION_PT_CODE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %>%
+#   group_by(DESTINATION_PT_CODE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %>%
 #   summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
 #   ungroup() %>%
 #   st_as_sf(coords = c("DESTINATION_LAT", "DESTINATION_LONG"),
 #            crs=4326)
+```
+
+```{r}
+dec_dest_tg_spacetime <- as_spacetime(dec_trip_generation_dest, 
+                    "DESTINATION_PT_CODE", 
+                    "TIME_PER_HOUR")
+dec_dest_tg_spacetime
+```
+
+```{r}
+is_spacetime_cube(dec_dest_tg_spacetime)
 ```
 
 ```{r}
@@ -362,12 +406,23 @@ print(missing_stops_jan)
 ```{r}
 # for spacetime 
 # jan_trip_generation_origin <- merged_bus_jan %>%
-#    select(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION, ORIGIN_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
-#   group_by(ORIGIN_PT_CODE, ORIGIN_DESCRIPTION,ORIGIN_SUBZONE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
+#    select(ORIGIN_PT_CODE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
+#   group_by(ORIGIN_PT_CODE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
 #   summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
 #   ungroup() %>%
 #   st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"),
 #            crs=4326)
+```
+
+```{r}
+jan_org_tg_spacetime <- as_spacetime(jan_trip_generation_origin, 
+                    "ORIGIN_PT_CODE", 
+                    "TIME_PER_HOUR")
+jan_org_tg_spacetime
+```
+
+```{r}
+is_spacetime_cube(jan_org_tg_spacetime)
 ```
 
 ```{r}
@@ -379,12 +434,23 @@ print(missing_stops_jan)
 ```{r}
 # for spacetime 
 # jan_trip_generation_dest <- merged_bus_jan %>%
-#    select(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION, DESTINATION_SUBZONE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %>%
-#   group_by(DESTINATION_PT_CODE, DESTINATION_DESCRIPTION,DESTINATION_SUBZONE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %>%
+#    select(DESTINATION_PT_CODE, TIME_PER_HOUR, TOTAL_TRIPS, DESTINATION_LAT, DESTINATION_LONG) %>%
+#   group_by(DESTINATION_PT_CODE, TIME_PER_HOUR, DESTINATION_LAT, DESTINATION_LONG) %>%
 #   summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
 #   ungroup() %>%
 #   st_as_sf(coords = c("DESTINATION_LAT", "DESTINATION_LONG"),
 #            crs=4326)
+```
+
+```{r}
+jan_dest_tg_spacetime <- as_spacetime(jan_trip_generation_dest, 
+                    "DESTINATION_PT_CODE", 
+                    "TIME_PER_HOUR")
+jan_dest_tg_spacetime
+```
+
+```{r}
+is_spacetime_cube(jan_dest_tg_spacetime)
 ```
 
 ```{r}
@@ -435,7 +501,7 @@ Our POIs include:
 
 -   Hospitals and Polyclinic
 
--   Residential
+-   Residential Areas
 
 ## **Business**
 
@@ -531,11 +597,19 @@ tm_shape(residential) +
   tm_bubbles(col = 'pink', size = 0.001, alpha = 0.5, border.col = "lightgrey")
 ```
 
-> ## **Shiny Storyboard**
->
-> ![](poi_shiny.png){fig-align="center"}
+# 2.1 Shiny Storyboard (POIs)
 
-\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+This tab allows the user to see a map that helps them to visualise the distribution of their chosen place of interest across Singapore.
+
+![](poi_shiny.png){fig-align="center"}
+
+**Calibration Parameters**
+
+| Parameter          | Type                    | Filter Options                                                                                                                                                                        |
+|--------------------|-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Spatial Unit       | Single Select, dropdown | `subzone layer` , `analytical hexagon`                                                                                                                                                |
+| Places of Interest | Multi-select, dropdown  | `All`, `Business`, `Financial Institutions`, `Entertainment`, `F&B Outlets`, `Leisure & Recreation Spots`, `Retail Shops`, `Schools`, `Hospitals and Polyclinic`, `Residential Areas` |
+| Area of Interest   | Multi-select, dropdown  | `Singapore` , `specific subzone`                                                                                                                                                      |
 
 # 3.0 Visualising Bus Stops in Singapore
 
@@ -548,13 +622,23 @@ tm_polygons(alpha = 0.1, id = "PLN_AREA_N")+
     tmap_options(check.and.fix = TRUE)
 ```
 
-> ## **Shiny Storyboard**
->
-> ![](busstop_shiny.png){fig-align="center"}
+# 3.1 Shiny Storyboard (Bus Stops)
 
-\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+This tab allows the user to see a map that helps them to visualise the distribution of bus stops across Singapore.
 
-# 4.0 Choropleth Mapping of Population
+![](busstop_shiny.png){fig-align="center"}
+
+**Calibration Parameters**
+
+| Parameter        | Type                    | Filter Options                          |
+|------------------|-------------------------|-----------------------------------------|
+| Spatial Unit     | Single Select, dropdown | `subzone layer` , `analytical hexagon`  |
+| Bus Stop Code    | Multi-select, dropdown  | `All`, `specific bus stop`              |
+| Area of Interest | Multi-select, dropdown  | `Singapore` , `specific subzone`        |
+
+# 4.0 Choropleth Map of Population
+
+## Data Preparation
 
 ```{r}
 population <- population %>%
@@ -630,13 +714,23 @@ tm_shape(mpsz_population)+
               palette = "Blues")
 ```
 
-> ## **Shiny Storyboard**
->
-> ![](pop_shiny.png){fig-align="center"}
+# 4.1 Shiny Storyboard (Population Map)
 
-\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+This tab allows the user to visualise the distribution of various age groups in different subzones of Singapore.
+
+![](pop_shiny.png){fig-align="center"}
+
+**Calibration Parameters**
+
+| Parameter        | Type                    | Filter Options                                  |
+|------------------|-------------------------|-------------------------------------------------|
+| Spatial Unit     | Single Select, dropdown | `subzone layer` , `analytical hexagon`          |
+| Age Group        | Multi-select, dropdown  | `Total`, `young`, `economically active`, `aged` |
+| Area of Interest | Multi-select, dropdown  | `Singapore` , `specific subzone`                |
 
 # 5.0 Passenger Volume Trend
+
+## Function to Create Graph
 
 ```{r}
 create_graph <- function(filename, plot_title, day_type) {
@@ -659,15 +753,21 @@ create_graph <- function(filename, plot_title, day_type) {
 
 ## **Weekday Trend**
 
+## November 2023
+
 ```{r}
 nov_day <- create_graph("data/merged_bus_nov.csv", "November 2023 Weekday", "WEEKDAY")
 nov_day
 ```
 
+## December 2023
+
 ```{r}
 dec_day <- create_graph("data/merged_bus_dec.csv", "December 2023 Weekday", "WEEKDAY")
 dec_day
 ```
+
+## January 2024
 
 ```{r}
 jan_day <- create_graph("data/merged_bus_jan.csv", "January 2024 Weekday", "WEEKDAY")
@@ -676,28 +776,43 @@ jan_day
 
 ## **Weekend Trend**
 
+## November 2023
+
 ```{r}
 nov_end <- create_graph("data/merged_bus_nov.csv", "November 2023 Weekend", "WEEKENDS/HOLIDAY")
 nov_end
 ```
+
+## December 2023
 
 ```{r}
 dec_end <- create_graph("data/merged_bus_dec.csv", "December 2023 Weekend", "WEEKENDS/HOLIDAY")
 dec_end
 ```
 
+## January 2024
+
 ```{r}
 jan_end <- create_graph("data/merged_bus_jan.csv", "January 2024 Weekend", "WEEKENDS/HOLIDAY")
 jan_end
 ```
 
-> ## **Shiny Storyboard**
->
-> -   ![](pass_vol_shiny.png)
+# 5.1 Shiny Storyboard (Passenger Volume)
 
-\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_
+This tab allows the user to observe the trends in passenger volume for buses during a selected month and time. This helps identify the peak times when the highest number of trips occur.
+
+![](pass_vol_shiny.png)
+
+**Calibration Parameters**
+
+| Parameter         | Type                    | Filter Options                                   |
+|-------------------|-------------------------|--------------------------------------------------|
+| Month of Interest | Single Select, dropdown | `November 2023`, `December 2023`, `January 2024` |
+| Day type          | Single Select, dropdown | `Weekday`, `Weekend`                             |
 
 # 6.0 Most and Least Popular Stations during Peak Hours
+
+## Function to Find Popular Stations
 
 ```{r}
 t5b5 <- function(filename, plot_title, day_type, time_interval){
@@ -875,19 +990,33 @@ p <- ggplot(data = trips_by_dest,
 print(p)
 ```
 
-> ## **Shiny Storyboard**
->
-> ![](pop_station_shiny.png){fig-align="center"}
->
-> \_\_
+# 6.1 Shiny Storyboard (Popular Stations) 
+
+This tab provides insights into the popularity of various bus stops during the chosen month, time, and day type. It allows the user to discern which bus stops are the most and least frequented.
+
+![](pop_station_shiny.png){fig-align="center"}
+
+**Calibration Parameters**
+
+| Parameter         | Type                    | Filter Options                                   |
+|-------------------|-------------------------|--------------------------------------------------|
+| Month of Interest | Single Select, dropdown | `November 2023`, `December 2023`, `January 2024` |
+| Day type          | Single Select, dropdown | `Weekday`, `Weekend`                             |
+| Time of Day       | Single Select, dropdown | `Morning`, `Evening`                             |
+| Popularity        | Single Select, dropdown | `Most Popular`, `Least Popular`                  |
+| Heatmap           | Single Select, dropdown | `True`, `False`                                  |
 
 # 7.0 Network analysis
+
+## Set Nodes for Network Graph
 
 ```{r}
 nodes_xy <- bus_coords_subzone %>%
   select(Longitude, Latitude) %>%
   rename(x = Longitude, y = Latitude)
 ```
+
+## Function to Create Weighted Graph
 
 ```{r}
 create_weighted_graph <- function(fn, origin, day, time_period, title) {
@@ -922,11 +1051,22 @@ create_weighted_graph("data/merged_bus_jan.csv", "46009", "WEEKDAY", c(6, 7), "J
 create_weighted_graph("data/merged_bus_jan.csv", "22009", "WEEKDAY", c(17, 18), "January Weekday Boon Lay Int Bus Stop 5pm - 7pm")
 ```
 
-> ## Shiny Storyboard
->
-> ![](network_shiny.png){fig-align="center"}
+# 7.1 Shiny Storyboard (Network Graph)
 
-# Centrality index
+This tab allows the user to visualize the flow of activity for the selected bus stop during the chosen month, time, and day type.
+
+![](network_shiny.png){fig-align="center"}
+
+**Calibration Parameters**
+
+| Parameter         | Type                    | Filter Options                                   |
+|-------------------|-------------------------|--------------------------------------------------|
+| Month of Interest | Single Select, dropdown | `November 2023`, `December 2023`, `January 2024` |
+| Day type          | Single Select, dropdown | `Weekday`, `Weekend`                             |
+| Time of Day       | Single Select, dropdown | `Morning`, `Evening`                             |
+| Bus Stop Code     | Multi-select, dropdown  | `All bus stops`, `specific bus stop`             |
+
+## Centrality Index
 
 ```{r}
 edges1 <- read_csv("data/merged_bus_jan.csv") %>%
@@ -939,7 +1079,7 @@ tr_graph1 <- graph_from_data_frame(edges1, directed = TRUE, vertices = bus_coord
 tr_graph1 <- set_vertex_attr(tr_graph1, "betweenness_centrality", value = betweenness(tr_graph1))
 ```
 
-## Betweenness Centrality for Bus Stations
+# 8.0 Betweenness Centrality for Bus Stations
 
 ```{r}
 g <- tr_graph1 %>%
@@ -952,11 +1092,22 @@ g <- tr_graph1 %>%
 print(g)
 ```
 
-## Shiny Storyboard
+# 8.1 Shiny Storyboard (Betweeness Centrality)
 
-> ![](between_shiny.png)
+This tab provides a visual representation of the betweenness centrality of bus stops, allowing for a clearer understanding of their importance in the network.
 
-# 8.0 Adjacency Matrix
+![](between_shiny.png){fig-align="center"}
+
+**Calibration Parameters**
+
+| Parameter         | Type                    | Filter Options                                   |
+|-------------------|-------------------------|--------------------------------------------------|
+| Month of Interest | Single Select, dropdown | `November 2023`, `December 2023`, `January 2024` |
+| Bus Stop Code     | Multi-Select, dropdown  | `All bus stops`, `specific bus stop`             |
+
+# 9.0 Correlation Matrix
+
+## Function to Calculate Sum of Trips
 
 ```{r}
 calculate_sum_of_trips_202311_WD <- function(merged_bus_nov) {
@@ -979,6 +1130,8 @@ WD_202311 <- calculate_sum_of_trips_202311_WD(merged_bus_nov)
 WE_202311 <- calculate_sum_of_trips_202311_WE(merged_bus_nov)
 
 ```
+
+## Data Transformation using Pivot Wider
 
 ```{r}
 pivot_wider(
@@ -1017,6 +1170,8 @@ pivot_wider(
   unused_fn = NULL
 )
 ```
+
+## Correlation Analysis
 
 ```{r}
 cor_data <- dcast(WD_202311, ORIGIN_PT_CODE ~ DESTINATION_PT_CODE, value.var = "TOTAL_TRIPS",fun.aggregate = sum, fill = 0)
@@ -1069,6 +1224,8 @@ corrplot(correlation_matrix_WE202311, method = "color",
          title = "Correlation Matrix WE_202311")
 ```
 
+## Plot Correlation Matrix
+
 ```{r}
 heatmaply(normalize(correlation_matrix_WD202311),
           Colv=NA,
@@ -1102,48 +1259,34 @@ heatmaply(normalize(correlation_matrix_WE202311),
           )
 ```
 
-# 9.0 Emerging Hot Spot Analysis
+# 9.1 Shiny Storyboard (Correlation Matrix)
+
+This tab offers a visualisation of the correlation matrix, illustrating the interrelationships between selected bus stops during the chosen month, time, and day type.
+
+![](adjacency_shiny.png){fig-align="center"}
+
+**Calibration Parameters**
+
+| Parameter                 | Type                    | Filter Options                                   |
+|---------------------------|-------------------------|--------------------------------------------------|
+| Month of Interest         | Single Select, dropdown | `November 2023`, `December 2023`, `January 2024` |
+| Day type                  | Single Select, dropdown | `Weekday`, `Weekend`                             |
+| Time of Day               | Single Select, dropdown | `Morning`, `Evening`                             |
+| Origin Bus Stop Code      | Multi-select, dropdown  | `specific bus stop`                              |
+| Destination Bus Stop Code | Multi-select, dropdown  | `specific bus stop`                              |
+
+# 10.0 Emerging Hot Spot Analysis
 
 ```{r}
 #| eval: false
 
-trip_generation_weekday <- merged_bus_dec %>%
- filter(DAY_TYPE == "WEEKDAY" &
-           TIME_PER_HOUR >= 6) %>%
-  select(ORIGIN_PT_CODE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
-  group_by(ORIGIN_PT_CODE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
-  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
-  ungroup() %>%
-  st_as_sf(coords = c("ORIGIN_LONG", "ORIGIN_LAT"),
-           crs=4326)
+#str(tg_spacetime)
 ```
 
 ```{r}
 #| eval: false
 
-tg_spacetime <- as_spacetime(trip_generation_weekday, 
-                    "ORIGIN_PT_CODE", 
-                    "TIME_PER_HOUR")
-tg_spacetime
-
-```
-
-```{r}
-#| eval: false
-
-is_spacetime_cube(tg_spacetime)
-```
-
-```{r}
-#| eval: false
-
-str(tg_spacetime)
-```
-
-```{r}
-#| eval: false
-
-ehsa_tg <- emerging_hotspot_analysis(tg_spacetime, 
+ehsa_tg <- emerging_hotspot_analysis(nov_org_tg_spacetime, 
                           "TRIPS GENERATED", 
                           threshold = 0.05)
 
@@ -1152,18 +1295,18 @@ ggplot(data = ehsa_tg,
   geom_bar()
 
 # neighbour list
-nb <- st_knn(trip_generation_weekday, 
+nb <- st_knn(nov_trip_generation_origin, 
              k = 1, symmetric = FALSE)
 head (nb)
 
 # spatial weights
 wt <- st_weights(nb, style = "W", allow_zero = NULL)
 
-gi_stars <- local_gstar_perm(tg_spacetime$'TRIPS GENERATED', nb, wt, nsim = 499, alternative = "two.sided")
+gi_stars <- local_gstar_perm(nov_org_tg_spacetime$'TRIPS GENERATED', nb, wt, nsim = 499, alternative = "two.sided")
 
 kable(head(gi_stars, n=10))
 
-ehsa_weekday <- trip_generation_weekday %>%
+ehsa_weekday <- nov_trip_generation_origin %>%
   cbind(gi_stars)
 ```
 
@@ -1171,13 +1314,24 @@ ehsa_weekday <- trip_generation_weekday %>%
 #| eval: false
 tmap_mode("view")
 
-tm_shape(trip_generation_weekday)+
+tm_shape(nov_trip_generation_origin)+
 tm_bubbles(col = "red",
            size = 1,
            border.col = "black",
            border.lwd = 1)
 ```
 
-## Shiny Storyboard
+## 10.1 Shiny Storyboard (EHSA)
 
-> ![](ehsa_shiny%20.png){fig-align="center"}
+This tab presents an emerging hot spot analysis for selected bus stops during the designated month, time, and day type, revealing areas of increased significance or activity.
+
+![](ehsa_shiny.png){fig-align="center"}
+
+**Calibration Parameters**
+
+| Parameter         | Type                    | Filter Options                                   |
+|-------------------|-------------------------|--------------------------------------------------|
+| Month of Interest | Single Select, dropdown | `November 2023`, `December 2023`, `January 2024` |
+| Day type          | Single Select, dropdown | `Weekday`, `Weekend`                             |
+| Time of Day       | Single Select, dropdown | `Morning`, `Evening`                             |
+| Bus Stop Code     | Single select, dropdown | `specific bus stop`                              |
