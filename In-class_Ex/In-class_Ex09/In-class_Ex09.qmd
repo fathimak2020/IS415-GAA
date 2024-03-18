@@ -1,0 +1,239 @@
+---
+title: "In-class Exercise 9:Geographically Weighted Predictive Models"
+format:
+  html:
+    toc: true
+execute: 
+  eval: false
+  warning: false
+  freeze: true
+  fig-retine: 3
+date: "March 18,2024"
+date-modified: "last-modified"
+---
+
+```{r}
+pacman::p_load(sf, spdep, GWmodel, SpatialML, 
+              tmap, Metrics,  tidymodels, tidyverse, gtsummary, rpart, rpart.plot, ggstatsplot, performance,)
+```
+
+rpart and rpart.plot is for recursive functioning purposes
+
+```{r}
+rs_sf <- read_rds("data/rds/HDB_resale.rds")
+```
+
+```{r}
+set.seed(1234)
+resale_split <- initial_split(rs_sf, 
+                              prop = 5/10,)
+train_sf <- training(resale_split)
+test_sf <- testing(resale_split)
+```
+
+```{r}
+train_sf <- train_sf %>%
+  st_drop_geometry() %>%
+  as.data.frame()
+
+test_df <- test_sf %>%
+  st_drop_geometry() %>%
+  as.data.frame()
+```
+
+```{r}
+rs_sf1 <- rs_sf %>%
+  st_drop_geometry()
+ggcorrmat(rs_sf1[,2:17])
+
+```
+
+\^ to apply statistical learning methods but not crucial for machine learning
+
+```{r}
+train_df <- train_df %>%
+  select(-c(PROX_CHAS))
+
+train_sf <- train_sf %>%
+  select(-c(PROX_CHAS))
+
+test_df <- tset_df %>%
+  select(-c(PROX_CHAS))
+
+test_sf <- test_sf %>%
+  select(-c(PROX_CHAS))
+```
+
+'-' to exclude the column from selection
+
+```{r}
+rs_mlr <- lm(formula = RESALE_PRICE~
+                  FLOOR_AREA_SQM +
+                  STOREY_ORDER + 
+                  REMAINING_LEASE_MTHS +
+                  PROX_CBD + 
+                  PROX_ELDERLYCARE +
+                  PROX_HAWKER +
+                  PROX_MRT +
+                  PROX_PARK +
+                  PROC_GOOD_PRISCH +
+                  PROX_MALL + 
+                  PROX_SUPERMARKET +
+                  WITHIN_350M_KINDERGARTEN +
+                  WITHIN_350M_CHILDCARE +
+                  WITHIN_350M_BUS +
+                  WITHIN_1KM_PRISCH,
+                data=train_df)
+```
+
+proximity to CHAS is removed
+
+```{r}
+coords <- st_coordinates(rs_sf)
+coords_train <- st_coordinates(train_sf)
+coords_test <- st_coordinates(test_sf)
+```
+
+```{r}
+set.seed(1234)
+rs_rp <- rpart(formula = RESALE_PRICE~
+                FLOOR_AREA_SQM +
+                  STOREY_ORDER + 
+                  REMAINING_LEASE_MTHS +
+                  PROX_CBD + 
+                  PROX_ELDERLYCARE +
+                  PROX_HAWKER +
+                  PROX_MRT +
+                  PROX_PARK +
+                  PROC_GOOD_PRISCH +
+                  PROX_MALL + 
+                  PROX_SUPERMARKET +
+                  WITHIN_350M_KINDERGARTEN +
+                  WITHIN_350M_CHILDCARE +
+                  WITHIN_350M_BUS +
+                  WITHIN_1KM_PRISCH,
+                data=train_df)
+rs_rp
+```
+
+proximity to CHAS is removed
+
+```{r}
+rpart.plot(rs_rp)
+```
+
+```{r}
+set.seed(1234)
+rs_rf <- ranger(formula = RESALE_PRICE~
+                  FLOOR_AREA_SQM +
+                  STOREY_ORDER + 
+                  REMAINING_LEASE_MTHS +
+                  PROX_CBD + 
+                  PROX_ELDERLYCARE +
+                  PROX_HAWKER +
+                  PROX_MRT +
+                  PROX_PARK +
+                  PROC_GOOD_PRISCH +
+                  PROX_MALL + 
+                  PROX_SUPERMARKET +
+                  WITHIN_350M_KINDERGARTEN +
+                  WITHIN_350M_CHILDCARE +
+                  WITHIN_350M_BUS +
+                  WITHIN_1KM_PRISCH,
+                data=train_df,
+                importance= "impurity")
+rs_rf
+```
+
+ranger package is usually used in geospatial machine learning
+
+importance is used to define what variables contribute to classification
+
+```{r}
+vi <- as.data.frame(rs_rf$variable.importance)
+```
+
+```{r}
+vi <- as.data.frame(rs_sf$variable,importance)
+vi$variables <-rownames (vi)
+vi <- vi %>%
+  rename(vi = "rs_rf$variable,importance")
+```
+
+```{r}
+ggplot(data =vi,
+       aes(x=vi,
+           y = reorder(variables, vi))) +
+  geom_bar(stat="identity")
+```
+
+bw.min and bw.max can reduce computational time
+
+```{r}
+grf_pred <-read_rds("data/models/grf_pred.rds")
+grf_pred_df <- as.data.frame(grf_pred)
+```
+
+```{r}
+grf_pred <- predict.grf(rs_grf,
+                        test_df,
+                        x.var.name="X",
+                        y.var.name="Y",
+                        )
+```
+
+```{r}
+test_pred <- test_df %>%
+  select(RESALE_PRICE) %>%
+  cbind(grf_pred_df)
+```
+
+```{r}
+rf_pred <- predict(rs_rf, test_df)
+```
+
+```{r}
+rf_pred_df <- as.data.frame (rf_pred$predictions)%>%
+  rename(rf_pred = "rf_pred$predictions")
+```
+
+```{r}
+test_pred <-cbind(test_pred,
+                  rf_pred_df)
+```
+
+```{r}
+mlr_pred <- predict(rs_mlr, test_df)
+```
+
+```{r}
+mlr_pred_df <- as.data.frame (mlr_pred)%>%
+  rename(mlr_pred = "mlr_pred")
+```
+
+```{r}
+test_pred <-cbind(test_pred,
+                  mlr_pred_df)
+```
+
+using yardstick to compare model comparison
+
+```{r}
+yardstick::rmse(test_pred,
+                RESALE_PRICE,
+                mlr_pred)
+```
+
+```{r}
+mc <- test_pred %>%
+  oivot_longer(cols =c(2:4),
+               names_to ="models",
+               values_to ="predicted")
+```
+
+```{r}
+ggplot(data = test_data_p,
+       aes(x = GRF_pred,
+           y = resale_price)) +
+  geom_point()
+```
