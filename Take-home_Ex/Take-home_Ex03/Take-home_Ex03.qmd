@@ -8,7 +8,7 @@ execute:
   warning: false
   freeze: true
   fig-retine: 3
-date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+date: "March 10,2024"
 date-modified: "last-modified"
 ---
 
@@ -49,7 +49,7 @@ This project investigates the determinants of public bus demand in Singapore thr
 ### **Import R packages**
 
 ```{r}
-pacman::p_load(sf, sfdep, tidyverse, tmap, spdep, knitr, leaflet, ggthemes, knitr, plotly, igraph, ggraph, corrplot, data.table, reshape2)
+pacman::p_load(sf, sfdep, tidyverse, tmap, spdep, knitr, leaflet, ggthemes, knitr, plotly, igraph, ggraph, corrplot, data.table, reshape2, heatmaply, stars)
 ```
 
 ### **Import data**
@@ -287,19 +287,53 @@ print(missing_stops_jan)
 
 ### November 2023 Origin Trip Generation
 
+Unable to select a range for time, only single time record
+
+Each bus stop has a different start-stop hour
+
 ```{r}
-#for spacetime
-nov_trip_generation_origin <- merged_bus_nov %>%
-   select(ORIGIN_PT_CODE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
-  group_by(ORIGIN_PT_CODE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
-  summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
-  ungroup() %>%
-  st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"),
-           crs=4326)
+
+generate_trip_origin_weekday <- function(data, origin_pt_code) {
+  origin_data <- data %>%
+    filter(ORIGIN_PT_CODE == origin_pt_code & DAY_TYPE == "WEEKDAY") %>%
+  st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"), crs = 4326)
+  if (nrow(origin_data) == 0) {
+    warning("No data found for the specified origin point code.")
+    return(NULL)
+  }
+  
+  min_time <- min(origin_data$TIME_PER_HOUR)
+  max_time <- max(origin_data$TIME_PER_HOUR)
+  
+  trips_generated <- origin_data %>%
+    filter(TIME_PER_HOUR >= min_time & TIME_PER_HOUR <= max_time) %>%
+    group_by(ORIGIN_PT_CODE, TIME_PER_HOUR) %>%
+    summarise(TRIPS_GENERATED = sum(TOTAL_TRIPS)) %>%
+    ungroup()
+
+  return(trips_generated)
+}
+
+
+origin_pt_code <- 18159  
+nov_trip_generation_origin2 <- generate_trip_origin(merged_bus_nov, origin_pt_code)
+print(nov_trip_generation_origin2)
+
 ```
 
 ```{r}
-nov_org_tg_spacetime <- as_spacetime(nov_trip_generation_origin, 
+#for spacetime [am]
+# nov_trip_generation_origin <- merged_bus_nov %>%
+#   select(ORIGIN_PT_CODE, TIME_PER_HOUR, TOTAL_TRIPS, ORIGIN_LAT, ORIGIN_LONG) %>%
+#   filter(TIME_PER_HOUR >= 6 & TIME_PER_HOUR <= 20) %>% #single hour selection
+#   group_by(ORIGIN_PT_CODE, TIME_PER_HOUR, ORIGIN_LAT, ORIGIN_LONG) %>%
+#   summarise(`TRIPS GENERATED` = sum(`TOTAL_TRIPS`)) %>%
+#   ungroup() %>%
+#   st_as_sf(coords = c("ORIGIN_LAT", "ORIGIN_LONG"), crs = 4326)
+```
+
+```{r}
+nov_org_tg_spacetime <- as_spacetime(nov_trip_generation_origin2, 
                     "ORIGIN_PT_CODE", 
                     "TIME_PER_HOUR")
 nov_org_tg_spacetime
@@ -311,6 +345,123 @@ is_spacetime_cube(nov_org_tg_spacetime)
 
 ```{r}
 #write_rds(nov_trip_generation_origin, "data/rds/nov_trip_generation_origin.rds")
+```
+
+```{r}
+ehsa_tg <- emerging_hotspot_analysis(nov_org_tg_spacetime, 
+                          "TRIPS GENERATED", 
+                          threshold = 0.05)
+```
+
+```{r}
+ggplot(data = ehsa_tg,
+       aes(x = classification)) +
+  geom_bar()
+```
+
+
+```{r}
+nb <- st_knn(nov_trip_generation_origin2, 
+             k = 1, symmetric = FALSE)
+head (nb)
+```
+
+```{r}
+wt <- st_weights(nb, style = "W", allow_zero = NULL)
+```
+
+```{r}
+gi_stars <- local_gstar_perm(tg_spacetime$'TRIPS GENERATED', nb, wt, nsim = 499, alternative = "two.sided")
+```
+
+```{r}
+kable(head(gi_stars, n=10))
+```
+
+```{r}
+ehsa_weekday <- nov_trip_generation_origin2 %>%
+  cbind(gi_stars)
+```
+
+```{r}
+bus_18159 <- ehsa_weekday %>%
+  filter(ORIGIN_PT_CODE == "18159") %>%
+  select(ORIGIN_PT_CODE, TIME_PER_HOUR, gi_star)
+```
+
+```{r}
+ggplot(data =  bus_18159,
+       aes(x = TIME_PER_HOUR,
+           y = gi_star)) + 
+  geom_bar(stat = "identity") +
+  theme_light()
+```
+
+```{r}
+bus_18159 %>%
+  summarise(mk = list(
+    unclass(
+      Kendall::MannKendall(gi_star)))) %>% 
+  tidyr::unnest_wider(mk)
+```
+
+
+Checking which bus stop codes have missing time_per_hours from 6-23, over 500 records.
+
+```{r}
+# Filtered data with time_per_hour between 6 and 23
+filtered_data <- nov_trip_generation_origin 
+
+# All unique origin PT codes in the dataset
+all_origin_pt_codes <- filtered_data %>%
+  distinct(ORIGIN_PT_CODE)
+
+# Total number of hours from 6 to 23
+total_hours <- 18  # 23 - 6 + 1
+
+# Function to check if all hours are present for each origin PT code
+check_all_hours_present <- function(data) {
+  data %>%
+    count(TIME_PER_HOUR) %>%
+    summarise(all_hours_present = n() == total_hours)
+}
+
+# Check for each origin PT code
+result <- filtered_data %>%
+  group_by(ORIGIN_PT_CODE) %>%
+  do(check_all_hours_present(.))
+
+# Filter out only the ORIGIN_PT_CODEs with missing hours
+missing_origin_pt_codes <- result %>%
+  filter(!all_hours_present)
+
+print(missing_origin_pt_codes)
+
+
+```
+
+```{r}
+#write_rds(missing_origin_pt_codes, "data/rds/missing_origin_pt_codes.rds")
+```
+
+Checking which hour exactly is missing
+
+```{r}
+filtered_data <- nov_trip_generation_origin %>%
+  filter(ORIGIN_PT_CODE == 18159, TIME_PER_HOUR >= 6 & TIME_PER_HOUR <= 23)
+
+# Count occurrences of each TIME_PER_HOUR
+time_per_hour_count <- filtered_data %>%
+  count(TIME_PER_HOUR)
+
+total_count <- sum(time_per_hour_count$n)
+
+print(total_count)
+```
+
+```{r}
+filtered_bus_nov <- bus_nov %>%
+  filter(ORIGIN_PT_CODE == 18159)
 ```
 
 ### November 2023 Destination Trip Generation
@@ -327,14 +478,14 @@ is_spacetime_cube(nov_org_tg_spacetime)
 ```
 
 ```{r}
-nov_dest_tg_spacetime <- as_spacetime(nov_trip_generation_dest, 
-                    "DESTINATION_PT_CODE", 
-                    "TIME_PER_HOUR")
-nov_dest_tg_spacetime
+# nov_dest_tg_spacetime <- as_spacetime(nov_trip_generation_dest, 
+#                     "DESTINATION_PT_CODE", 
+#                     "TIME_PER_HOUR")
+# nov_dest_tg_spacetime
 ```
 
 ```{r}
-is_spacetime_cube(nov_dest_tg_spacetime)
+# is_spacetime_cube(nov_dest_tg_spacetime)
 ```
 
 ```{r}
@@ -357,14 +508,14 @@ is_spacetime_cube(nov_dest_tg_spacetime)
 ```
 
 ```{r}
-dec_org_tg_spacetime <- as_spacetime(dec_trip_generation_origin, 
-                    "ORIGIN_PT_CODE", 
-                    "TIME_PER_HOUR")
-dec_org_tg_spacetime
+# dec_org_tg_spacetime <- as_spacetime(dec_trip_generation_origin, 
+#                     "ORIGIN_PT_CODE", 
+#                     "TIME_PER_HOUR")
+# dec_org_tg_spacetime
 ```
 
 ```{r}
-is_spacetime_cube(dec_org_tg_spacetime)
+# is_spacetime_cube(dec_org_tg_spacetime)
 ```
 
 ```{r}
@@ -385,14 +536,14 @@ is_spacetime_cube(dec_org_tg_spacetime)
 ```
 
 ```{r}
-dec_dest_tg_spacetime <- as_spacetime(dec_trip_generation_dest, 
-                    "DESTINATION_PT_CODE", 
-                    "TIME_PER_HOUR")
-dec_dest_tg_spacetime
+# dec_dest_tg_spacetime <- as_spacetime(dec_trip_generation_dest, 
+#                     "DESTINATION_PT_CODE", 
+#                     "TIME_PER_HOUR")
+# dec_dest_tg_spacetime
 ```
 
 ```{r}
-is_spacetime_cube(dec_dest_tg_spacetime)
+# is_spacetime_cube(dec_dest_tg_spacetime)
 ```
 
 ```{r}
@@ -415,14 +566,14 @@ is_spacetime_cube(dec_dest_tg_spacetime)
 ```
 
 ```{r}
-jan_org_tg_spacetime <- as_spacetime(jan_trip_generation_origin, 
-                    "ORIGIN_PT_CODE", 
-                    "TIME_PER_HOUR")
-jan_org_tg_spacetime
+# jan_org_tg_spacetime <- as_spacetime(jan_trip_generation_origin, 
+#                     "ORIGIN_PT_CODE", 
+#                     "TIME_PER_HOUR")
+# jan_org_tg_spacetime
 ```
 
 ```{r}
-is_spacetime_cube(jan_org_tg_spacetime)
+# is_spacetime_cube(jan_org_tg_spacetime)
 ```
 
 ```{r}
@@ -443,14 +594,14 @@ is_spacetime_cube(jan_org_tg_spacetime)
 ```
 
 ```{r}
-jan_dest_tg_spacetime <- as_spacetime(jan_trip_generation_dest, 
-                    "DESTINATION_PT_CODE", 
-                    "TIME_PER_HOUR")
-jan_dest_tg_spacetime
+# jan_dest_tg_spacetime <- as_spacetime(jan_trip_generation_dest, 
+#                     "DESTINATION_PT_CODE", 
+#                     "TIME_PER_HOUR")
+# jan_dest_tg_spacetime
 ```
 
 ```{r}
-is_spacetime_cube(jan_dest_tg_spacetime)
+# is_spacetime_cube(jan_dest_tg_spacetime)
 ```
 
 ```{r}
@@ -588,7 +739,7 @@ tm_shape(hospitals1) +
 ## Residential Areas
 
 ```{r}
-residential <- st_as_sf(hdb, coords = c("lng", "lat"), crs = 4326)
+residential <- st_as_sf(residential, coords = c("lng", "lat"), crs = 4326)
 ```
 
 ```{r}
@@ -606,7 +757,7 @@ This tab allows the user to see a map that helps them to visualise the distribut
 **Calibration Parameters**
 
 | Parameter          | Type                    | Filter Options                                                                                                                                                                        |
-|--------------------|-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|------------|------------|-------------------------------------------------|
 | Spatial Unit       | Single Select, dropdown | `subzone layer` , `analytical hexagon`                                                                                                                                                |
 | Places of Interest | Multi-select, dropdown  | `All`, `Business`, `Financial Institutions`, `Entertainment`, `F&B Outlets`, `Leisure & Recreation Spots`, `Retail Shops`, `Schools`, `Hospitals and Polyclinic`, `Residential Areas` |
 | Area of Interest   | Multi-select, dropdown  | `Singapore` , `specific subzone`                                                                                                                                                      |
@@ -615,7 +766,7 @@ This tab allows the user to see a map that helps them to visualise the distribut
 
 ```{r}
 tmap_mode('view')
-tm_shape(sg_bus) + 
+tm_shape(sg_bus_stops) + 
   tm_bubbles(col = 'red', size = 0.01, alpha = 1, border.col = "lightgrey")+
   tm_shape(mpsz_sf) +
 tm_polygons(alpha = 0.1, id = "PLN_AREA_N")+
@@ -630,11 +781,11 @@ This tab allows the user to see a map that helps them to visualise the distribut
 
 **Calibration Parameters**
 
-| Parameter        | Type                    | Filter Options                          |
-|------------------|-------------------------|-----------------------------------------|
-| Spatial Unit     | Single Select, dropdown | `subzone layer` , `analytical hexagon`  |
-| Bus Stop Code    | Multi-select, dropdown  | `All`, `specific bus stop`              |
-| Area of Interest | Multi-select, dropdown  | `Singapore` , `specific subzone`        |
+| Parameter        | Type                    | Filter Options                         |
+|------------------|---------------------|----------------------------------|
+| Spatial Unit     | Single Select, dropdown | `subzone layer` , `analytical hexagon` |
+| Bus Stop Code    | Multi-select, dropdown  | `All`, `specific bus stop`             |
+| Area of Interest | Multi-select, dropdown  | `Singapore` , `specific subzone`       |
 
 # 4.0 Choropleth Map of Population
 
@@ -723,7 +874,7 @@ This tab allows the user to visualise the distribution of various age groups in 
 **Calibration Parameters**
 
 | Parameter        | Type                    | Filter Options                                  |
-|------------------|-------------------------|-------------------------------------------------|
+|-----------------|-------------------|------------------------------------|
 | Spatial Unit     | Single Select, dropdown | `subzone layer` , `analytical hexagon`          |
 | Age Group        | Multi-select, dropdown  | `Total`, `young`, `economically active`, `aged` |
 | Area of Interest | Multi-select, dropdown  | `Singapore` , `specific subzone`                |
@@ -806,7 +957,7 @@ This tab allows the user to observe the trends in passenger volume for buses dur
 **Calibration Parameters**
 
 | Parameter         | Type                    | Filter Options                                   |
-|-------------------|-------------------------|--------------------------------------------------|
+|-----------------|------------------|-------------------------------------|
 | Month of Interest | Single Select, dropdown | `November 2023`, `December 2023`, `January 2024` |
 | Day type          | Single Select, dropdown | `Weekday`, `Weekend`                             |
 
@@ -990,7 +1141,7 @@ p <- ggplot(data = trips_by_dest,
 print(p)
 ```
 
-# 6.1 Shiny Storyboard (Popular Stations) 
+# 6.1 Shiny Storyboard (Popular Stations)
 
 This tab provides insights into the popularity of various bus stops during the chosen month, time, and day type. It allows the user to discern which bus stops are the most and least frequented.
 
@@ -999,7 +1150,7 @@ This tab provides insights into the popularity of various bus stops during the c
 **Calibration Parameters**
 
 | Parameter         | Type                    | Filter Options                                   |
-|-------------------|-------------------------|--------------------------------------------------|
+|-----------------|------------------|-------------------------------------|
 | Month of Interest | Single Select, dropdown | `November 2023`, `December 2023`, `January 2024` |
 | Day type          | Single Select, dropdown | `Weekday`, `Weekend`                             |
 | Time of Day       | Single Select, dropdown | `Morning`, `Evening`                             |
@@ -1060,7 +1211,7 @@ This tab allows the user to visualize the flow of activity for the selected bus 
 **Calibration Parameters**
 
 | Parameter         | Type                    | Filter Options                                   |
-|-------------------|-------------------------|--------------------------------------------------|
+|-----------------|------------------|-------------------------------------|
 | Month of Interest | Single Select, dropdown | `November 2023`, `December 2023`, `January 2024` |
 | Day type          | Single Select, dropdown | `Weekday`, `Weekend`                             |
 | Time of Day       | Single Select, dropdown | `Morning`, `Evening`                             |
@@ -1101,7 +1252,7 @@ This tab provides a visual representation of the betweenness centrality of bus s
 **Calibration Parameters**
 
 | Parameter         | Type                    | Filter Options                                   |
-|-------------------|-------------------------|--------------------------------------------------|
+|-----------------|------------------|-------------------------------------|
 | Month of Interest | Single Select, dropdown | `November 2023`, `December 2023`, `January 2024` |
 | Bus Stop Code     | Multi-Select, dropdown  | `All bus stops`, `specific bus stop`             |
 
@@ -1227,6 +1378,8 @@ corrplot(correlation_matrix_WE202311, method = "color",
 ## Plot Correlation Matrix
 
 ```{r}
+#| eval: false
+
 heatmaply(normalize(correlation_matrix_WD202311),
           Colv=NA,
           seriate = "none",
@@ -1268,7 +1421,7 @@ This tab offers a visualisation of the correlation matrix, illustrating the inte
 **Calibration Parameters**
 
 | Parameter                 | Type                    | Filter Options                                   |
-|---------------------------|-------------------------|--------------------------------------------------|
+|-------------------|------------------|-----------------------------------|
 | Month of Interest         | Single Select, dropdown | `November 2023`, `December 2023`, `January 2024` |
 | Day type                  | Single Select, dropdown | `Weekday`, `Weekend`                             |
 | Time of Day               | Single Select, dropdown | `Morning`, `Evening`                             |
@@ -1330,8 +1483,10 @@ This tab presents an emerging hot spot analysis for selected bus stops during th
 **Calibration Parameters**
 
 | Parameter         | Type                    | Filter Options                                   |
-|-------------------|-------------------------|--------------------------------------------------|
+|-----------------|------------------|-------------------------------------|
 | Month of Interest | Single Select, dropdown | `November 2023`, `December 2023`, `January 2024` |
 | Day type          | Single Select, dropdown | `Weekday`, `Weekend`                             |
 | Time of Day       | Single Select, dropdown | `Morning`, `Evening`                             |
 | Bus Stop Code     | Single select, dropdown | `specific bus stop`                              |
+
+-   remove
